@@ -44,7 +44,7 @@ def run_queue(gpu, cmds):
     wd = f"/tmp/work{{gpu}}"
     os.makedirs(wd, exist_ok=True)
     for i, cmd in enumerate(cmds):
-        cmd = cmd.format(PREP=PREP, OUT=OUT, WORK=WORK)
+        cmd = cmd.replace("{{PREP}}", PREP).replace("{{OUT}}", OUT).replace("{{WORK}}", WORK)
         log = f"{{WORK}}/logs/q{{gpu}}_{{i}}.log"
         print(f"[gpu{{gpu}}] start {{cmd}}", flush=True)
         s = time.time()
