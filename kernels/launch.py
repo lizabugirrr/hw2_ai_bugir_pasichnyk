@@ -48,10 +48,16 @@ def run_queue(gpu, cmds):
         log = f"{{WORK}}/logs/q{{gpu}}_{{i}}.log"
         print(f"[gpu{{gpu}}] start {{cmd}}", flush=True)
         s = time.time()
+        p = subprocess.Popen(cmd, shell=True, cwd=wd, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                             text=True, errors="replace")
         with open(log, "w") as f:
-            r = subprocess.run(cmd, shell=True, cwd=wd, env=env, stdout=f, stderr=subprocess.STDOUT)
-        tail = open(log).read().splitlines()[-3:]
-        print(f"[gpu{{gpu}}] exit {{r.returncode}} after {{(time.time()-s)/60:.1f}} min: {{cmd}}", *tail, sep="\n", flush=True)
+            for line in p.stdout:
+                f.write(line)
+                # echo compact lines (epoch summaries, metrics, errors), skip progress bars
+                if len(line) < 600 and "\r" not in line and "━" not in line and "%|" not in line:
+                    print(f"[gpu{{gpu}}] {{line}}", end="", flush=True)
+        p.wait()
+        print(f"[gpu{{gpu}}] exit {{p.returncode}} after {{(time.time()-s)/60:.1f}} min: {{cmd}}", flush=True)
 
 threads = [threading.Thread(target=run_queue, args=(g, q)) for g, q in enumerate(QUEUES)]
 [t.start() for t in threads]
