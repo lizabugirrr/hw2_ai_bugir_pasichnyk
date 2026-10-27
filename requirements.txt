@@ -1,1 +1,11 @@
+torch>=2.4
+torchvision>=0.19
+ultralytics==8.4.191
+pycocotools
+pandas
+pyarrow
+scikit-learn
+opencv-python-headless
+matplotlib
+seaborn
 kaggle

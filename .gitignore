@@ -9,3 +9,10 @@ __pycache__/
 
 # secrets
 kaggle.json
+
+# experiment artefacts: keep configs/metrics/curves, not predictions or weights
+runs/**/*.parquet
+runs/**/*.pt
+runs/**/weights/
+prep/
+*.egg-info/
