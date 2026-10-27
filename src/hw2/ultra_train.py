@@ -37,6 +37,8 @@ EXTRA = dict(
     nwd_ratio=0.0, nwd_c=32.0,  # box loss = (1-r)*(1-CIoU) + r*(1-NWD)
     tal_topk=None,         # task-aligned assigner top-k (Ultralytics default 10)
     matcher_cost=None,     # RT-DETR Hungarian matcher cost gains, e.g. {"class": 2, "bbox": 5, "giou": 2}
+    rtdetr_nq=None,        # RT-DETR number of queries (default 300)
+    rtdetr_nd=None,        # RT-DETR number of denoising queries (default 100)
 )
 
 
@@ -86,6 +88,17 @@ def patch_losses(extra: dict):
 
         rtops.HungarianMatcher.__init__ = init
 
+    if extra["rtdetr_nq"] or extra["rtdetr_nd"]:
+        # the decoder is rebuilt from yaml by the trainer, so changing constructor defaults is enough
+        import inspect
+        from ultralytics.nn.modules.head import RTDETRDecoder
+        names = list(inspect.signature(RTDETRDecoder.__init__).parameters)[1:]
+        d = list(RTDETRDecoder.__init__.__defaults__)
+        for k, v in (("nq", extra["rtdetr_nq"]), ("nd", extra["rtdetr_nd"])):
+            if v:
+                d[names.index(k) - (len(names) - len(d))] = v
+        RTDETRDecoder.__init__.__defaults__ = tuple(d)
+
 
 # ---------------------------------------------------------------- inference
 def predict(model, frames: pd.DataFrame, imgsz: int, extra: dict, batch: int = 8) -> pd.DataFrame:
@@ -119,7 +132,10 @@ def measure_fps(model, frames: pd.DataFrame, imgsz: int, extra: dict, n: int = 1
 
 
 def load_model(name: str, weights: str | None):
+    """`hw2:<file>` refers to a model yaml shipped in hw2/configs."""
     from ultralytics import RTDETR, YOLO
+    if name.startswith("hw2:"):
+        name = str(Path(__file__).parent / "configs" / name[4:])
     cls = RTDETR if "rtdetr" in Path(name).name else YOLO
     m = cls(name)
     if weights:
@@ -170,7 +186,11 @@ def main():
     print(f"train {len(train)} frames, val {len(val)} frames", flush=True)
 
     patch_losses(extra)
-    model = load_model(a.model, extra["weights"])
+    if (extra["rtdetr_nq"] or extra["rtdetr_nd"]) and a.model.endswith(".pt"):
+        # build a fresh decoder with the patched sizes, then copy the COCO weights into it
+        model = load_model(a.model.replace(".pt", ".yaml"), a.model)
+    else:
+        model = load_model(a.model, extra["weights"])
     t0 = time.time()
     model.train(data=str(out / "data.yaml"), project=str(out), name="train", exist_ok=True,
                 device=a.device, **tcfg)
