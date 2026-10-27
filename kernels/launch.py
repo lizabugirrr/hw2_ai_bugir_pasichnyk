@@ -32,9 +32,14 @@ subprocess.run(
     f"pip install -q --no-deps git+{repo}@{{SHA}}", shell=True, check=True)
 print(f"installed hw2@{{SHA}} in {{time.time()-t0:.0f}}s", flush=True)
 
-found = sorted(glob.glob("/kaggle/input/*/frames.csv") + glob.glob("/kaggle/input/*/*/frames.csv")
-               + glob.glob("/kaggle/input/*/*/*/frames.csv"))
-PREP = os.path.dirname(found[0]) if found else ""
+found = []
+for d, sub, files in os.walk("/kaggle/input"):
+    sub[:] = [s for s in sub if s not in ("images", "labels", "ignore", "train", "val", "test", "runs")]
+    if d.count("/") <= 4:
+        print("input dir:", d, flush=True)
+    if "frames.csv" in files:
+        found.append(d)
+PREP = sorted(found)[0] if found else ""
 OUT = f"{{WORK}}/runs"
 os.makedirs(f"{{WORK}}/logs", exist_ok=True)
 print("PREP =", PREP, flush=True)
