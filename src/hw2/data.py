@@ -89,7 +89,14 @@ def make_folds(frames: pd.DataFrame, n_folds: int = 5) -> pd.DataFrame:
     """Clip-level GroupKFold: all frames of a sequence land in the same fold.
 
     GroupKFold runs on frames grouped by clip, so it balances the number of frames per fold.
+    The assignment of GroupKFold differs between scikit-learn versions, so the 5-fold split
+    used for all experiments is stored in configs/folds.csv and reused when it matches the data.
     """
+    fixed = Path(__file__).parent / "configs" / "folds.csv"
+    if n_folds == 5 and fixed.exists():
+        f = pd.read_csv(fixed)
+        if set(f["clip"]) == set(frames["clip"]):
+            return f
     clips = frames.groupby("clip").size().rename("n_frames").reset_index()
     clip_fold = {}
     gkf = GroupKFold(n_splits=n_folds)
