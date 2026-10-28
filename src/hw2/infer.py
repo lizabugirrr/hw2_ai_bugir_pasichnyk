@@ -35,12 +35,15 @@ def tiles_for(w: int, h: int, n: int, overlap: float):
 
 
 def run(model, frames: pd.DataFrame, imgsz: int, tiles: int, tile_imgsz: int, overlap: float,
-        tta: bool, conf: float, iou: float, merge_iou: float) -> pd.DataFrame:
+        tta: bool, conf: float, iou: float, merge_iou: float, degrade: int = 0) -> pd.DataFrame:
     out = []
     kw = dict(conf=conf, iou=iou, max_det=500, half=True, verbose=False)
     for r in frames.itertuples():
         img = cv2.imread(r.path)
         H, W = img.shape[:2]
+        if degrade:  # simulate a low-resolution source: down to `degrade` px width and back up
+            from .ultra_train import degrade as blur
+            img = blur(img, degrade)
         parts = []
         res = model.predict(img, imgsz=imgsz, **kw)[0].boxes
         parts.append((res.xyxy.cpu(), res.conf.cpu(), res.cls.cpu()))
@@ -80,6 +83,7 @@ def main():
     ap.add_argument("--conf", type=float, default=0.001)
     ap.add_argument("--iou", type=float, default=0.6)
     ap.add_argument("--merge_iou", type=float, default=0.6)
+    ap.add_argument("--degrade", type=int, default=0, help="blur frames as if the source were this many px wide")
     ap.add_argument("--val_fold", type=int, default=0)
     ap.add_argument("--val_step", type=int, default=4)
     a = ap.parse_args()
@@ -95,7 +99,7 @@ def main():
             fr, _ = load_all(root)
             frames = subsample(fold_frames(fr, make_folds(fr), a.val_fold), a.val_step)
         t = time.time()
-        p = run(model, frames, a.imgsz, a.tiles, a.tile_imgsz, a.overlap, a.tta, a.conf, a.iou, a.merge_iou)
+        p = run(model, frames, a.imgsz, a.tiles, a.tile_imgsz, a.overlap, a.tta, a.conf, a.iou, a.merge_iou, a.degrade)
         p.to_parquet(out / f"{split}_preds_{a.tag}.parquet")
         info = {**vars(a), "split": split, "n_frames": len(frames), "sec_per_frame": round((time.time() - t) / len(frames), 4)}
         (out / f"{split}_preds_{a.tag}.json").write_text(json.dumps(info, indent=1))

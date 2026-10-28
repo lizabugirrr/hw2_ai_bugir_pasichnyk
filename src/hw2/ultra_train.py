@@ -31,6 +31,7 @@ TRAIN_DEFAULTS = dict(
 )
 EXTRA = dict(
     val_fold=0, step=10, val_step=4, curve_step=20,
+    lowres_p=0.0, lowres_w=(640, 1000),  # train-time degradation: downscale to this width and back up (test has 680-960 px clips)
     train_all=False,       # also train on the validation fold (final model; fold-0 metrics are then optimistic)
     weights=None,          # load these weights into a custom model yaml
     test_imgsz=None,       # defaults to imgsz
@@ -99,6 +100,32 @@ def patch_losses(extra: dict):
             if v:
                 d[names.index(k) - (len(names) - len(d))] = v
         RTDETRDecoder.__init__.__defaults__ = tuple(d)
+
+
+def patch_lowres(extra: dict):
+    """Randomly blur training images the way a low-resolution source video would look after upscaling."""
+    if extra["lowres_p"] <= 0:
+        return
+    import cv2
+    from ultralytics.data.base import BaseDataset
+    orig, p, (lo, hi) = BaseDataset.load_image, extra["lowres_p"], extra["lowres_w"]
+
+    def load_image(self, i, *a, **kw):
+        im, hw0, hw = orig(self, i, *a, **kw)
+        if self.augment and random.random() < p:
+            im = degrade(im, random.uniform(lo, hi))
+        return im, hw0, hw
+
+    BaseDataset.load_image = load_image
+
+
+def degrade(im: np.ndarray, width: float) -> np.ndarray:
+    import cv2
+    h, w = im.shape[:2]
+    if w <= width:
+        return im
+    small = cv2.resize(im, (int(width), max(1, int(h * width / w))), interpolation=cv2.INTER_AREA)
+    return cv2.resize(small, (w, h), interpolation=cv2.INTER_LINEAR)
 
 
 # ---------------------------------------------------------------- inference
@@ -187,6 +214,7 @@ def main():
     print(f"train {len(train)} frames, val {len(val)} frames", flush=True)
 
     patch_losses(extra)
+    patch_lowres(extra)
     if (extra["rtdetr_nq"] or extra["rtdetr_nd"]) and a.model.endswith(".pt"):
         # build a fresh decoder with the patched sizes, then copy the COCO weights into it
         model = load_model(a.model.replace(".pt", ".yaml"), a.model)
