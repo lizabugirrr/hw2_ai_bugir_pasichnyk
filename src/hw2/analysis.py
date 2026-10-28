@@ -125,3 +125,27 @@ def draw(path: str, preds: pd.DataFrame | None, gt: pd.DataFrame | None, score_t
         x0, y0, x1, y1 = crop
         img = img[y0:y1, x0:x1]
     return img
+
+
+def curve(run: dict) -> pd.DataFrame:
+    """Validation mAP over training for one run (epoch, mAP, minutes) from the run's own history.
+
+    torchvision runs evaluate our COCO metric every 2 epochs on every 20th frame of fold 0.
+    Ultralytics runs report their metric after every epoch on the same frames (ignored regions masked).
+    """
+    h = run["history"]
+    if "curve_mAP" in h:
+        h = h.dropna(subset=["curve_mAP"])
+        return pd.DataFrame({"epoch": h.epoch, "mAP": h.curve_mAP, "minutes": h.time_min})
+    return pd.DataFrame({"epoch": h.epoch, "mAP": h["metrics/mAP50-95(B)"], "minutes": h.time / 60})
+
+
+def worst_frames(preds: pd.DataFrame, boxes: pd.DataFrame, keys, score_thr: float = 0.3, n_sample: int = 150,
+                 seed: int = 0) -> pd.DataFrame:
+    """Per-frame error counts for a random sample of frames, to pick failure cases from."""
+    keys = list(pd.Series(sorted(keys)).sample(min(n_sample, len(keys)), random_state=seed))
+    rows = []
+    for k in keys:
+        r = error_breakdown(preds, boxes, [k], score_thr=score_thr)
+        rows.append({"key": k, **r, "n_gt": int(((boxes.key == k) & (boxes.ignore == 0)).sum())})
+    return pd.DataFrame(rows).set_index("key")
