@@ -1,0 +1,5 @@
+"model, input",mAP,AP50,AP_small,AR500
+"base, clean",0.3096,0.551,0.1024,0.4729
+"base, degraded 800px",0.2776,0.4887,0.0713,0.4369
+"lowres-aug, clean",0.2961,0.5282,0.0965,0.4644
+"lowres-aug, degraded 800px",0.2784,0.4943,0.0814,0.4456

@@ -1,0 +1,1 @@
+{"path": "/kaggle/working/runs/rtdetr_lr", "train": "/kaggle/working/runs/rtdetr_lr/train.txt", "val": "/kaggle/working/runs/rtdetr_lr/val.txt", "nc": 8, "names": ["person", "bicycle", "car", "van", "truck", "tricycle", "bus", "motor"]}

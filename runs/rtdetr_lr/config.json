@@ -1,0 +1,44 @@
+{
+ "model": "rtdetr-l.pt",
+ "train": {
+  "epochs": 12,
+  "imgsz": 1536,
+  "batch": 3,
+  "workers": 2,
+  "seed": 0,
+  "deterministic": false,
+  "close_mosaic": 3,
+  "patience": 100,
+  "plots": true,
+  "max_det": 500,
+  "cache": false,
+  "amp": true
+ },
+ "hw2": {
+  "val_fold": 0,
+  "step": 10,
+  "val_step": 4,
+  "curve_step": 20,
+  "lowres_p": 0.3,
+  "lowres_w": [
+   640,
+   1000
+  ],
+  "train_all": false,
+  "weights": null,
+  "test_imgsz": null,
+  "conf": 0.001,
+  "iou": 0.6,
+  "nwd_ratio": 0.0,
+  "nwd_c": 32.0,
+  "tal_topk": null,
+  "matcher_cost": {
+   "class": 2,
+   "bbox": 5,
+   "giou": 5,
+   "no_object": 0.1
+  },
+  "rtdetr_nq": null,
+  "rtdetr_nd": null
+ }
+}
