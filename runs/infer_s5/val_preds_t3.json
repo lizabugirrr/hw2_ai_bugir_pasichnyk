@@ -1,0 +1,18 @@
+{
+ "weights": "/kaggle/input/notebooks/lizabugirrr/hw2-final1/runs/rtdetr_s5_1536/train/weights/last.pt",
+ "out": "/kaggle/working/runs/infer_s5",
+ "tag": "t3",
+ "split": "val",
+ "imgsz": 1536,
+ "tiles": 3,
+ "tile_imgsz": 800,
+ "overlap": 0.2,
+ "tta": false,
+ "conf": 0.001,
+ "iou": 0.6,
+ "merge_iou": 0.6,
+ "val_fold": 0,
+ "val_step": 4,
+ "n_frames": 1354,
+ "sec_per_frame": 0.3886
+}
