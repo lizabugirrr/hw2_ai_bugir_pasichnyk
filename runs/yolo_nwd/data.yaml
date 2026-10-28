@@ -1,0 +1,1 @@
+{"path": "/kaggle/working/runs/yolo_nwd", "train": "/kaggle/working/runs/yolo_nwd/train.txt", "val": "/kaggle/working/runs/yolo_nwd/val.txt", "nc": 8, "names": ["person", "bicycle", "car", "van", "truck", "tricycle", "bus", "motor"]}
