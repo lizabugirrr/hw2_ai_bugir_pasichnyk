@@ -1,0 +1,6 @@
+method,mAP,AP50,AP_small,AR500
+no rescoring,0.3095,0.5511,0.1022,0.4728
+temporal radius=1 alpha=0.5,0.3083,0.544,0.1004,0.4728
+temporal radius=2 alpha=0.5,0.3062,0.5414,0.101,0.4728
+temporal radius=2 alpha=0.3,0.309,0.549,0.1028,0.4728
+temporal radius=4 alpha=0.5,0.2991,0.5332,0.1009,0.4728
