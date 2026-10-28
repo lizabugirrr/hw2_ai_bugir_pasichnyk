@@ -3,7 +3,8 @@
 - full frame at a chosen `imgsz`;
 - optional SAHI-style slicing (Akyon et al., 2022): an n x n grid of overlapping tiles, each
   resized to `tile_imgsz`, merged with the full-frame pass by class-wise NMS;
-- optional test-time augmentation (Ultralytics `augment=True`: flips + scales).
+- optional test-time augmentation: horizontal flip merged with the plain pass by class-wise NMS
+  (Ultralytics' `augment=True` is not implemented for RT-DETR, so it is done here).
 
 Usage:
   python -m hw2.infer --weights runs/x/train/weights/last.pt --out runs/x --tag t2 --tiles 2 --split val test
@@ -36,13 +37,18 @@ def tiles_for(w: int, h: int, n: int, overlap: float):
 def run(model, frames: pd.DataFrame, imgsz: int, tiles: int, tile_imgsz: int, overlap: float,
         tta: bool, conf: float, iou: float, merge_iou: float) -> pd.DataFrame:
     out = []
-    kw = dict(conf=conf, iou=iou, max_det=500, half=True, verbose=False, augment=tta)
+    kw = dict(conf=conf, iou=iou, max_det=500, half=True, verbose=False)
     for r in frames.itertuples():
         img = cv2.imread(r.path)
         H, W = img.shape[:2]
         parts = []
         res = model.predict(img, imgsz=imgsz, **kw)[0].boxes
         parts.append((res.xyxy.cpu(), res.conf.cpu(), res.cls.cpu()))
+        if tta:
+            fb = model.predict(cv2.flip(img, 1), imgsz=imgsz, **kw)[0].boxes
+            xy = fb.xyxy.cpu().clone()
+            xy[:, [0, 2]] = W - xy[:, [2, 0]]
+            parts.append((xy, fb.conf.cpu(), fb.cls.cpu()))
         if tiles > 1:
             crops = tiles_for(W, H, tiles, overlap)
             batch = [img[y0:y1, x0:x1] for x0, y0, x1, y1 in crops]
@@ -51,7 +57,7 @@ def run(model, frames: pd.DataFrame, imgsz: int, tiles: int, tile_imgsz: int, ov
                 xy = b.xyxy.cpu() + torch.tensor([x0, y0, x0, y0], dtype=torch.float32)
                 parts.append((xy, b.conf.cpu(), b.cls.cpu()))
         xy = torch.cat([p[0] for p in parts]); sc = torch.cat([p[1] for p in parts]); cl = torch.cat([p[2] for p in parts])
-        if tiles > 1 and len(xy):
+        if (tiles > 1 or tta) and len(xy):
             keep = batched_nms(xy.float(), sc.float(), cl.long(), merge_iou)[:500]
             xy, sc, cl = xy[keep], sc[keep], cl[keep]
         xy = xy.numpy()

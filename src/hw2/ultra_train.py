@@ -31,6 +31,7 @@ TRAIN_DEFAULTS = dict(
 )
 EXTRA = dict(
     val_fold=0, step=10, val_step=4, curve_step=20,
+    train_all=False,       # also train on the validation fold (final model; fold-0 metrics are then optimistic)
     weights=None,          # load these weights into a custom model yaml
     test_imgsz=None,       # defaults to imgsz
     conf=0.001, iou=0.6,   # NMS settings for prediction (ignored by NMS-free heads)
@@ -167,7 +168,7 @@ def main():
     # dataset lists: Ultralytics finds labels by replacing /images/ with /labels/
     prep = Path(a.prep).resolve()
     pf = pd.read_csv(prep / "frames.csv")
-    train = subsample(pf[pf.fold != extra["val_fold"]], extra["step"])
+    train = subsample(pf if extra["train_all"] else pf[pf.fold != extra["val_fold"]], extra["step"])
     if a.max_train:
         train = train.sample(a.max_train, random_state=0)
     curve_masked = subsample(pf[pf.fold == extra["val_fold"]], extra["curve_step"])
