@@ -5,3 +5,4 @@ rtdetr_1536,RT-DETR-l 1536,0.3096,0.3426
 rtdetr_all_1536,RT-DETR-l 1536 trained on all 63 clips,,0.3465
 rtdetr_all_1536+TTA,same + horizontal-flip TTA,0.3180,0.3458
 ensemble,RT-DETR(all)+TTA and Faster R-CNN (16-256 anchors) by WBF 2:1 iou 0.7,0.3322,0.3251
+rtdetr_all_lr,RT-DETR-l 1536 all clips + low-res augmentation,0.2961,0.3245
