@@ -32,6 +32,7 @@ TRAIN_DEFAULTS = dict(
 EXTRA = dict(
     val_fold=0, step=10, val_step=4, curve_step=20,
     lowres_p=0.0, lowres_w=(640, 1000),  # train-time degradation: downscale to this width and back up (test has 680-960 px clips)
+    head_shift=None,       # copy yolo11s.pt detection-head branches into a custom head; value = index of the first copied level
     train_all=False,       # also train on the validation fold (final model; fold-0 metrics are then optimistic)
     weights=None,          # load these weights into a custom model yaml
     test_imgsz=None,       # defaults to imgsz
@@ -171,6 +172,31 @@ def load_model(name: str, weights: str | None):
     return m
 
 
+def transfer_head(model, weights: str, shift: int) -> int:
+    """Copies the per-level box/class branches of a pretrained Detect head into a head with different levels.
+
+    Level i of the pretrained head goes to level i + shift of the new head (shift=1 when a P2 level is prepended,
+    0 when levels are only dropped from the end). Tensors whose shape differs (e.g. the 80-class output) are skipped.
+    """
+    import re
+    from ultralytics import YOLO
+    src = YOLO(weights).model
+    sd, dst = src.state_dict(), model.model.state_dict()
+    si, di = len(src.model) - 1, len(model.model.model) - 1
+    n = 0
+    for k, v in sd.items():
+        m = re.match(rf"model\.{si}\.(cv[23])\.(\d+)\.(.*)", k)
+        if not m:
+            continue
+        nk = f"model.{di}.{m.group(1)}.{int(m.group(2)) + shift}.{m.group(3)}"
+        if nk in dst and dst[nk].shape == v.shape:
+            dst[nk].copy_(v)
+            n += 1
+    model.model.load_state_dict(dst)
+    print(f"transferred {n} head tensors from {weights} (shift {shift})", flush=True)
+    return n
+
+
 # ---------------------------------------------------------------- main
 def main():
     ap = argparse.ArgumentParser()
@@ -220,6 +246,8 @@ def main():
         model = load_model(a.model.replace(".pt", ".yaml"), a.model)
     else:
         model = load_model(a.model, extra["weights"])
+        if extra["head_shift"] is not None:
+            transfer_head(model, extra["weights"], extra["head_shift"])
     t0 = time.time()
     model.train(data=str(out / "data.yaml"), project=str(out), name="train", exist_ok=True,
                 device=a.device, **tcfg)
