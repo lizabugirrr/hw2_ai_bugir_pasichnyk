@@ -16,3 +16,4 @@ runs/**/*.pt
 runs/**/weights/
 prep/
 *.egg-info/
+weights/

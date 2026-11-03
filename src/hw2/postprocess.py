@@ -106,3 +106,101 @@ def temporal_rescore(preds: pd.DataFrame, frames: pd.DataFrame, radius: int = 2,
             out.append(cur.assign(score=s))
     res = pd.concat(out, ignore_index=True)
     return res[preds.columns.tolist()]
+
+
+def seq_rescore(preds: pd.DataFrame, frames: pd.DataFrame, iou_thr: float = 0.5, beta: float = 0.5,
+                mode: str = "mean", max_len: int = 0) -> pd.DataFrame:
+    """Seq-NMS-style rescoring (Han et al., 2016) without the suppression step.
+
+    Same-class detections of consecutive frames are linked when their IoU exceeds `iou_thr`. A dynamic
+    programme finds, for every detection, the best path (highest score sum) through it going back in time and
+    forward in time; the detection is rescored with the mean (or max) score of that path:
+        s' = (1 - beta) * s + beta * path_score.
+    Frames are linked in order of frame number within a clip; gaps are not bridged, so it expects
+    consecutive frames. `max_len` > 0 limits how far the path may extend in each direction.
+    """
+    import torch
+    from torchvision.ops import box_iou
+
+    f = frames.set_index("key")[["clip", "frame"]]
+    p = preds.join(f, on="key").reset_index(drop=True)
+    new = p.score.to_numpy().copy()
+    for _, g in p.groupby("clip", sort=False):
+        order = sorted(g.frame.unique())
+        idx = [g.index[g.frame == fr].to_numpy() for fr in order]
+        n = len(idx)
+        xyxy = [torch.tensor(np.stack([p.x[i], p.y[i], p.x[i] + p.w[i], p.y[i] + p.h[i]], 1), dtype=torch.float32) for i in idx]
+        cls = [p.cls.to_numpy()[i] for i in idx]
+        sc = [p.score.to_numpy()[i] for i in idx]
+        links = [None] * (n - 1)
+        for t in range(n - 1):
+            if len(idx[t]) and len(idx[t + 1]):
+                ok = (box_iou(xyxy[t], xyxy[t + 1]).numpy() > iou_thr) & (cls[t][:, None] == cls[t + 1][None, :])
+                links[t] = ok
+        # forward: best path ending at each detection; backward: best path starting at each detection
+        fs, fl, bs, bl = [None] * n, [None] * n, [None] * n, [None] * n
+        for t in range(n):
+            fs[t], fl[t] = sc[t].copy(), np.ones(len(sc[t]))
+            if t and links[t - 1] is not None:
+                m = np.where(links[t - 1], fs[t - 1][:, None], -np.inf)
+                j, best = m.argmax(0), m.max(0)
+                has = np.isfinite(best)
+                fs[t] = sc[t] + np.where(has, best, 0)
+                fl[t] = 1 + np.where(has, fl[t - 1][j], 0)
+        for t in range(n - 1, -1, -1):
+            bs[t], bl[t] = sc[t].copy(), np.ones(len(sc[t]))
+            if t < n - 1 and links[t] is not None:
+                m = np.where(links[t], bs[t + 1][None, :], -np.inf)
+                j, best = m.argmax(1), m.max(1)
+                has = np.isfinite(best)
+                bs[t] = sc[t] + np.where(has, best, 0)
+                bl[t] = 1 + np.where(has, bl[t + 1][j], 0)
+        for t in range(n):
+            total, length = fs[t] + bs[t] - sc[t], fl[t] + bl[t] - 1
+            path = total / length if mode == "mean" else np.maximum(sc[t], total / length)
+            new[idx[t]] = (1 - beta) * sc[t] + beta * path
+    return preds.assign(score=new)[preds.columns.tolist()]
+
+
+def propagate(preds: pd.DataFrame, frames: pd.DataFrame, conf: float = 0.6, decay: float = 0.5,
+              dup_iou: float = 0.5, nms_iou: float = 0.6) -> pd.DataFrame:
+    """Copies confident detections of the previous and next frame into the current one (T-CNN style propagation).
+
+    A neighbour detection with score >= `conf` is added with score * `decay` unless the current frame
+    already has a same-class box with IoU > `dup_iou`. Added boxes then go through class-wise NMS.
+    """
+    import torch
+    from torchvision.ops import batched_nms, box_iou
+
+    f = frames.set_index("key")[["clip", "frame"]]
+    p = preds.join(f, on="key")
+    keys = {(c, fr): k for (c, fr), k in zip(zip(frames["clip"], frames["frame"]), frames["key"])}
+    by = {k: g for k, g in p.groupby("key")}
+    out = []
+    for key, cur in by.items():
+        c, fr = cur["clip"].iloc[0], cur["frame"].iloc[0]
+        parts = [cur]
+        cb = torch.tensor(np.stack([cur.x, cur.y, cur.x + cur.w, cur.y + cur.h], 1), dtype=torch.float32)
+        for d in (-1, 1):
+            nk = keys.get((c, fr + d))
+            if nk is None or nk not in by:
+                continue
+            nb = by[nk]
+            nb = nb[nb.score >= conf]
+            if not len(nb):
+                continue
+            nbx = torch.tensor(np.stack([nb.x, nb.y, nb.x + nb.w, nb.y + nb.h], 1), dtype=torch.float32)
+            same = torch.tensor(nb.cls.to_numpy()[:, None] == cur.cls.to_numpy()[None, :])
+            dup = ((box_iou(nbx, cb) > dup_iou) & same).any(1).numpy() if len(cur) else np.zeros(len(nb), bool)
+            add = nb[~dup].copy()
+            add["score"] *= decay
+            add["key"] = key
+            parts.append(add)
+        m = pd.concat(parts, ignore_index=True)
+        if len(m) > len(cur):
+            b = torch.tensor(np.stack([m.x, m.y, m.x + m.w, m.y + m.h], 1), dtype=torch.float32)
+            keep = batched_nms(b, torch.tensor(m.score.to_numpy(), dtype=torch.float32), torch.tensor(m.cls.to_numpy()), nms_iou)
+            m = m.iloc[keep.numpy()]
+        out.append(m)
+    res = pd.concat(out, ignore_index=True)
+    return res[preds.columns.tolist()]

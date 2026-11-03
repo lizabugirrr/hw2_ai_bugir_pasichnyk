@@ -1,0 +1,9 @@
+method,mAP,AP50,AP_small,AR500,sec
+no temporal (score>=0.01),0.3095,0.5511,0.1022,0.4728,0
+seq-rescore mean beta=0.5 iou=0.5,0.3141,0.5597,0.0974,0.4728,14
+seq-rescore mean beta=0.3 iou=0.5,0.3152,0.5617,0.1013,0.4728,12
+seq-rescore max beta=0.5 iou=0.5,0.311,0.5509,0.1,0.4728,13
+seq-rescore mean beta=0.5 iou=0.7,0.3176,0.5635,0.0988,0.4728,11
+propagate conf=0.6 decay=0.5,0.3097,0.5524,0.1023,0.4707,25
+propagate conf=0.7 decay=0.7,0.3094,0.5514,0.1023,0.4712,25
+propagate conf=0.8 decay=0.9,0.3088,0.5496,0.1022,0.4725,23
