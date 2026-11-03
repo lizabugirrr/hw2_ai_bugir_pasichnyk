@@ -8,16 +8,18 @@ Usage:
   python kernels/launch.py --slug hw2-prep --cpu --no-prep --queue "python -m hw2.prep --out {WORK}/prep --step 2"
 Placeholders in commands: {PREP} (prepared dataset dir), {OUT} (runs dir), {WORK} (/kaggle/working).
 Commands inside one --queue are separated by " && ".
+Set KAGGLE_USER to launch from another team member's account (it then needs its own hw2-prep kernel).
 """
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import tempfile
 from pathlib import Path
 
-USER = "lizabugirrr"
+USER = os.environ.get("KAGGLE_USER", "lizabugirrr")  # account that owns the kernels
 REPO = "https://github.com/lizabugirrr/hw2_ai_bugir_pasichnyk"
 COMP = "multiple-object-video-detection-hw-2-ucu-ai-2026"
 

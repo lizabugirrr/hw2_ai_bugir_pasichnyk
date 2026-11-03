@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
 import subprocess
 import tempfile
@@ -15,7 +16,7 @@ from pathlib import Path
 
 import pandas as pd
 
-USER = "lizabugirrr"
+USER = os.environ.get("KAGGLE_USER", "lizabugirrr")
 ROOT = Path(__file__).resolve().parent.parent
 
 
