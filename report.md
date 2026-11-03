@@ -1,6 +1,6 @@
 ---
 title: Homework 2 -- Multi-object Detection in Drone Video (VisDrone-VID)
-author: Yelyzaveta Bugir, Pasichnyk
+author: Yelyzaveta Bugir, Nazar Pasichnyk
 course: Artificial Intelligence · UCU
 date: 2026-11-03
 ---
