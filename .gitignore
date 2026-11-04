@@ -19,3 +19,4 @@ prep/
 weights/
 
 *_.md
+wandb/

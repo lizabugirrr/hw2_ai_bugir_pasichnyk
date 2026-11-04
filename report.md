@@ -9,7 +9,7 @@ date: 2026-11-03
 
 We detect 8 object classes (pedestrian and people merged into `person`, awning-tricycle merged into `tricycle`, plus bicycle, car, van, truck, bus, motor) in drone video frames. The data are 63 labelled VisDrone-VID clips (27,047 frames, 1.22 M boxes) and a hidden test set of 48 clips (3,811 frames). The metric is COCO mAP@[.5:.95].
 
-Our final model is **RT-DETR-l at 1536 px trained on all 63 clips**. It scores **0.3465** on the public leaderboard, first place at the time of writing. All model comparisons are made on one clip-level validation fold, so differences smaller than about 0.015 mAP should not be read as real (see [Noise](#how-much-to-trust-the-numbers)). Several things that looked good on validation did not help on the leaderboard, and we report these as they are.
+Our final model is **RT-DETR-l at 1536 px trained on all 63 clips**. It scores **0.3465** on the public leaderboard (first place when submitted, second on 2026-11-04). All model comparisons are made on one clip-level validation fold, so differences smaller than about 0.02 mAP should not be read as real (see [Noise](#how-much-to-trust-the-numbers)). Several things that looked good on validation did not help on the leaderboard, and we report these as they are.
 
 ## 1. Data and validation protocol
 
@@ -29,7 +29,7 @@ Our final model is **RT-DETR-l at 1536 px trained on all 63 clips**. It scores *
 ![Class distribution](images/eda_classes.png)
 ![Objects per frame](images/eda_density.png)
 
-**Split.** Frames of one clip must not appear on both sides, because neighbouring frames are near-duplicates. We use 5-fold `GroupKFold` by clip and, because of the compute budget (Kaggle T4, 30 GPU-hours per week), validate every model on **fold 0 only** (1,354 validation frames, one frame in four of the held-out clips). Training uses 2,189 frames (every 10th frame of the other folds) unless stated otherwise. Every detector is trained for 12 epochs. Fold assignments are stored in `src/hw2/configs/folds.csv`, because `GroupKFold` returns different folds in different scikit-learn versions.
+**Split.** Frames of one clip must not appear on both sides, because neighbouring frames are near-duplicates. We use 5-fold `GroupKFold` by clip and, because of the compute budget (Kaggle T4, 30 GPU-hours per week), validate every model on **fold 0 only** (1,354 validation frames, one frame in four of the held-out clips). Training uses 2,189 frames (every 10th frame of the other folds) unless stated otherwise. Every detector is trained for 12 epochs (one later run with 24 epochs is in §4). Fold assignments are stored in `src/hw2/configs/folds.csv`, because `GroupKFold` returns different folds in different scikit-learn versions.
 
 Models trained on all 63 clips have no clean validation set. Their "fold 0" numbers (about 0.54) are in-sample and are not used in any comparison below.
 
@@ -46,6 +46,7 @@ Every family has a baseline and at least two modified runs. "fps" is the through
 | | retina_a12 | anchors 12-192 | 0.1834 | 0.3992 | 0.0664 | 19.2 |
 | YOLO11s (anchor-free) | yolo_base | 1344 px | 0.2449 | 0.4427 | 0.0797 | 74.9 |
 | | yolo_base_s1 | same, other seed | 0.2294 | 0.4123 | 0.0769 | 71.3 |
+| | yolo_base_r2 | same as `yolo_base`, repeated (noise check) | 0.2514 | 0.4551 | 0.0787 | 74.7 |
 | | yolo_nwd | box loss 0.5·CIoU + 0.5·NWD | 0.2489 | 0.4496 | 0.0739 | 76.3 |
 | | yolo_1920 | input 1920 px | 0.2511 | 0.4517 | 0.0837 | 37.3 |
 | RT-DETR-l (query-based) | rtdetr_base | 300 queries, 1344 px | 0.2971 | 0.5424 | 0.1085 | 10.0 |
@@ -69,12 +70,12 @@ Every family has a baseline and at least two modified runs. "fps" is the through
 
 1. The query-based detector is the clear winner: RT-DETR-l at 1344 px (about 0.295-0.300 over three runs) is 0.02-0.03 mAP above the best CNN detector (Faster R-CNN with tuned anchors, 0.2736) and 0.05 above YOLO11s, and its AP_small is higher (about 0.10 versus 0.08). Its speed (10-12 fps) is close to Faster R-CNN (11-14 fps) and far below YOLO (75 fps).
 2. Matching the anchors to the data helped the two-stage model (+0.014, borderline given the noise below) but hurt RetinaNet badly (-0.045). We did not investigate why.
-3. Resolution is the most useful single change for RT-DETR: 1344 px to 1536 px gave +0.01 to +0.015 on validation and +0.029 on the leaderboard (0.3137 to 0.3426). For YOLO, 1920 px gave +0.006, within noise.
+3. Resolution is the most useful single change for RT-DETR: 1344 px to 1536 px gave +0.01 to +0.015 on validation, which alone would be within noise, and +0.029 on the leaderboard (0.3137 to 0.3426). Going further to 1792 px did not help (§4). For YOLO, 1920 px gave +0.006, within noise.
 4. RT-DETR-x (0.3135) is no better than RT-DETR-l (0.3096) at the same resolution, at about two thirds of the speed.
 
 ### How much to trust the numbers
 
-Two YOLO runs with an identical configuration and different seeds differ by 0.015 mAP (0.2449 versus 0.2294), and two RT-DETR runs by 0.006. Since we have a single validation fold of about 12 clips, we treat differences below roughly 0.015 as inconclusive. Only the family ranking (RT-DETR above the rest) and the effect of the input resolution are clearly outside this noise.
+Three YOLO runs with an identical configuration span 0.022 mAP: 0.2294 (seed 1), 0.2449 and 0.2514 (both seed 0; training on a GPU is not bit-exact, so the same seed does not give the same model). Two RT-DETR runs differ by 0.006, and two runs of the P2-head YOLO by 0.018 (§5.3). Since we have a single validation fold of about 12 clips, we treat differences below roughly 0.02 as inconclusive. Only the family ranking (RT-DETR above the rest) is clearly outside this noise on validation; the effect of the input resolution is supported mainly by the leaderboard.
 
 ## 3. Where the errors are
 
@@ -122,6 +123,19 @@ Inference variants on fold 0 (RT-DETR-l 1536):
 
 ![Fold-0 mAP of the base model on clean and degraded frames](images/resolution_shift.png)
 
+**Longer training and higher resolution.** Two late fold-0 runs tested whether the final configuration was under-trained or under-resolved (notebook 07). Both start from the COCO checkpoint and use every 5th frame, like `rtdetr_s5_1536`.
+
+| Run | Change from rtdetr_s5_1536 | mAP | AP50 | AP_small | fps |
+|---|---|---|---|---|---|
+| rtdetr_s5_1536 (reference) | 12 epochs, 1536 px, batch 3 | 0.3096 | 0.5510 | 0.1024 | 10.2 |
+| rtdetr_e24 | 24 epochs | 0.2755 | 0.4925 | 0.0726 | 9.3 |
+| rtdetr_1792 | 1792 px (batch 2, to fit in T4 memory) | 0.3035 | 0.5430 | 0.0990 | 7.1 |
+
+![RT-DETR-l: validation mAP and GIoU loss over 12 and 24 epochs, and at 1792 px](images/rtdetr_epochs.png)
+
+- **Twice as many epochs overfit.** The training GIoU loss keeps falling (0.50 at epoch 12, 0.39 at epoch 24) while the validation GIoU loss rises (0.62 to 0.64). The per-epoch mAP of the 24-epoch run peaks at epoch 2 (0.309, Ultralytics' own validation) and ends at 0.28, 0.034 below the 12-epoch model, which is beyond our noise level. This agrees with the "more frames" result above: the training set holds only about 50 distinct clips, and the model memorises them. The longer run also stretches the learning-rate decay over 24 epochs, so it is not exactly "the 12-epoch model trained further".
+- **1792 px gave nothing measurable.** 0.3035 against 0.3096 is within noise, at 70% of the speed. The batch size had to drop from 3 to 2, so resolution is not the only change. We did not submit either model, since neither beat the reference on fold 0.
+
 ## 5. Bonus tasks
 
 ### 5.1 Temporal information
@@ -143,7 +157,7 @@ The naive window average gives nothing and rescoring along linked paths gives ab
 
 ### 5.2 Visualisation and Weights & Biases
 
-Notebook 06 looks inside both detector types on fold-0 frames. Code is in `src/hw2/viz.py`. Training curves, losses, configurations and validation predictions of every run are logged to Weights & Biases by `src/hw2/wandb_log.py`: <!-- TODO (authors): paste the public W&B project link here -->
+Notebook 06 looks inside both detector types on fold-0 frames. Code is in `src/hw2/viz.py`. Training curves, losses, configurations and final metrics of every run are logged to Weights & Biases by `src/hw2/wandb_log.py`: [wandb.ai/pasichnyk-pn-ukrainian-catholic-university/hw2-visdrone-vid](https://wandb.ai/pasichnyk-pn-ukrainian-catholic-university/hw2-visdrone-vid). The runs were trained on Kaggle without W&B access and uploaded afterwards, so wall-clock times in W&B are upload times. Validation images with predicted and ground-truth boxes are attached to the four runs of §4 and §5.3 whose prediction files we kept (`rtdetr_e24`, `rtdetr_1792`, `yolo_base_r2`, `yolo_p2_hinit_r2`).
 
 **Grad-CAM for YOLO11s.** The target is the class score of the prediction that best covers a ground-truth box. Maps are taken at three backbone stages and three neck outputs.
 
@@ -184,16 +198,26 @@ Small objects are the bottleneck, so we modified the YOLO11s detection head. `P2
 |---|---|---|---|---|---|
 | yolo_base (reference) | 0.2449 | 0.4427 | 0.0797 | 0.4004 | 74.9 |
 | yolo_base_s1 (other seed) | 0.2294 | 0.4123 | 0.0769 | 0.3859 | 71.3 |
+| yolo_base_r2 (repeat of reference) | 0.2514 | 0.4551 | 0.0787 | 0.4220 | 74.7 |
 | P2 head, new weights | 0.2178 | 0.4301 | 0.0756 | 0.3524 | 50.9 |
 | P2 head, transferred head weights | 0.2446 | 0.4656 | 0.0797 | 0.3893 | 54.1 |
+| P2 head, transferred head weights, repeat | 0.2269 | 0.4308 | 0.0796 | 0.3818 | 54.6 |
 | P2, no P5 | 0.2210 | 0.4359 | 0.0763 | 0.3551 | 56.9 |
 | P3 + P4 only | 0.2308 | 0.4274 | 0.0733 | 0.3802 | 74.5 |
 
-None of the variants beats the reference, and the differences are at the level of the seed-to-seed noise. The P2 head did not improve AP_small (0.0797 at best, the same as the reference). Transferring the head weights recovers the loss from random initialisation (0.2178 to 0.2446) but does not go beyond the pretrained model. The P2 head costs about 30% of the speed. Our conclusion is limited to this setting (12 epochs, a single seed per variant). We cannot exclude that more training would change the picture.
+None of the variants beats the reference. We repeated the reference and the best variant (`P2-hinit`) once more, and the five runs overlap completely: three reference runs span 0.2294-0.2514 and two `P2-hinit` runs 0.2269-0.2446. Every variant lies inside or below the reference range, never above it.
+
+![mAP of every YOLO11s head-variant run against the spread of the three reference runs](images/arch_noise.png)
+
+The P2 head was meant to find more small objects, and it does not. AP_small is 0.0796-0.0797 for both `P2-hinit` runs and 0.0787-0.0797 for the references. With the predictions of the two repeated runs (notebook 07) we also checked recall directly. Small-object recall is the same at every score threshold (0.329 against 0.328 at score ≥ 0.3, 0.465 against 0.477 at ≥ 0.05). On 150 random validation frames the P2 head misses fewer small objects than the reference in 25 frames and more in 29 (933 against 939 misses in total). The failure frames picked automatically for the reference are the same ones as in §3, and the P2 head fails on them in the same way: distant parked cars in `uav0000124_00944` remain undetected.
+
+![Failure cases of the reference YOLO11s (left) and the P2 head (right)](images/fail_arch.png)
+
+Transferring the head weights recovers the loss from random initialisation (0.2178 to 0.2446 and 0.2269) but does not go beyond the pretrained model. The P2 head costs about 30% of the speed. Our conclusion is limited to 12 epochs and at most two runs per variant. Given the RT-DETR result in §4, we do not expect longer training to change it on this amount of data, but we did not test that for YOLO.
 
 ## 6. Conclusions
 
-- A query-based detector (RT-DETR) at high input resolution was the best choice for this dataset. The advantage over CNN detectors (+0.02 to +0.03 mAP over the best CNN detector) and the benefit of 1536 px over 1344 px are the only effects clearly above the noise of our protocol.
+- A query-based detector (RT-DETR) at high input resolution was the best choice for this dataset. The advantage over CNN detectors (+0.02 to +0.03 mAP over the best CNN detector) and the benefit of 1536 px over 1344 px (clear on the leaderboard) are the only effects above the noise of our protocol. Going further, to 1792 px or to 24 epochs, did not help, and 24 epochs overfit.
 - Most of our other ideas (tiling, more frames, loss changes, extra detection levels, an ensemble with Faster R-CNN, low-resolution augmentation) gave nothing or hurt on the leaderboard. A lesson from this is that **a single validation fold is a weak guide**: the ensemble had the best fold-0 score of any inference variant and was our worst use of a submission.
 - The final result is 0.3465 mAP on the public leaderboard.
 
