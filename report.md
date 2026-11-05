@@ -77,6 +77,19 @@ Every family has a baseline and at least two modified runs. "fps" is the through
 
 Three YOLO runs with an identical configuration span 0.022 mAP: 0.2294 (seed 1), 0.2449 and 0.2514 (both seed 0; training on a GPU is not bit-exact, so the same seed does not give the same model). Two RT-DETR runs differ by 0.006, and two runs of the P2-head YOLO by 0.018 (§5.3). Since we have a single validation fold of about 12 clips, we treat differences below roughly 0.02 as inconclusive. Only the family ranking (RT-DETR above the rest) is clearly outside this noise on validation; the effect of the input resolution is supported mainly by the leaderboard.
 
+**Full cross-validation of the final configuration.** The task asks for cross-validation throughout, but the budget allowed it only for our best configuration. We trained RT-DETR-l at 1536 px (same settings as `rtdetr_s5_1536`) on each of the five clip-level folds and evaluated it on the held-out fold:
+
+| Held-out fold | mAP | AP50 | AP_small | AP_medium | AP_large |
+|---|---|---|---|---|---|
+| 0 | 0.3096 | 0.5510 | 0.1024 | 0.2329 | 0.4909 |
+| 1 | 0.3148 | 0.5877 | 0.0878 | 0.3166 | 0.3850 |
+| 2 | 0.2674 | 0.5085 | 0.1185 | 0.2802 | 0.4377 |
+| 3 | 0.2652 | 0.4898 | 0.0914 | 0.2786 | 0.4666 |
+| 4 | 0.2737 | 0.5123 | 0.1449 | 0.2848 | 0.5121 |
+| **mean ± std** | **0.2861 ± 0.0241** | 0.5299 ± 0.0392 | 0.1090 ± 0.0234 | 0.2786 ± 0.0299 | 0.4585 ± 0.0496 |
+
+The mAP differs by up to 0.05 between folds (0.265 to 0.315), more than twice the run-to-run noise above. Fold 0, on which every other comparison in this report is made, is one of the two easiest folds (0.3096 against a mean of 0.2861), so our fold-0 numbers are optimistic by about 0.02 in absolute terms. We expect this to shift all models by a similar amount, but we did not check that for the other detector families, whose comparison therefore still rests on a single fold. The size of the fold-to-fold spread also means that a difference between two models on one fold is only informative if it is large compared to it, and it is one more reason why the fold-0 ensemble result did not carry over to the leaderboard.
+
 ## 3. Where the errors are
 
 For each model we match detections with score ≥ 0.3 to the ground truth and label them as correct, duplicate, wrong class, badly localised, inside an ignored region, or background. We also count misses by object size. The full tables and the three automatically selected failure frames per family are in notebooks 02-04.
@@ -221,6 +234,6 @@ Transferring the head weights recovers the loss from random initialisation (0.21
 - Most of our other ideas (tiling, more frames, loss changes, extra detection levels, an ensemble with Faster R-CNN, low-resolution augmentation) gave nothing or hurt on the leaderboard. A lesson from this is that **a single validation fold is a weak guide**: the ensemble had the best fold-0 score of any inference variant and was our worst use of a submission.
 - The final result is 0.3465 mAP on the public leaderboard.
 
-**Limitations.** One validation fold, one or two seeds per configuration, a hidden test set that differs from the labelled data in resolution, and a temporal gain (+0.008) that is not confirmed on the leaderboard. All numbers are COCO mAP computed with our own evaluator on fold 0, except the leaderboard column.
+**Limitations.** Detector families are compared on one validation fold (only the final RT-DETR configuration was cross-validated on all five), one or two seeds per configuration, a hidden test set that differs from the labelled data in resolution, and a temporal gain (+0.008) that is not confirmed on the leaderboard. All numbers are COCO mAP computed with our own evaluator on fold 0, except the leaderboard column.
 
 **Reproducing.** Code is in `src/hw2/` (data preparation `prep.py`, training `tv_train.py` and `ultra_train.py`, inference `infer.py`, post-processing `postprocess.py`, evaluation `evaluate.py`). Training ran on Kaggle T4 GPUs through the scripts in `kernels/`. All metrics are in `results/` and the analysis notebooks are in `notebooks/`.
