@@ -9,7 +9,7 @@ date: 2026-11-03
 
 We detect 8 object classes (pedestrian and people merged into `person`, awning-tricycle merged into `tricycle`, plus bicycle, car, van, truck, bus, motor) in drone video frames. The data are 63 labelled VisDrone-VID clips (27,047 frames, 1.22 M boxes) and a hidden test set of 48 clips (3,811 frames). The metric is COCO mAP@[.5:.95].
 
-Our final model is **RT-DETR-l at 1536 px trained on all 63 clips**. It scores **0.3465** on the public leaderboard (first place when submitted, second on 2026-11-04). All model comparisons are made on one clip-level validation fold, so differences smaller than about 0.02 mAP should not be read as real (see [Noise](#how-much-to-trust-the-numbers)). Several things that looked good on validation did not help on the leaderboard, and we report these as they are.
+Our best single model is **RT-DETR-l at 1536 px trained on all 63 clips** (public leaderboard 0.3465). Our final submission is a weighted-box-fusion ensemble of seven RT-DETR models trained on different sets of clips, followed by temporal rescoring along each clip, and it scores **0.3675** on the public leaderboard (first place at the time of writing). All model comparisons are made on one clip-level validation fold, so differences smaller than about 0.02 mAP should not be read as real (see [Noise](#how-much-to-trust-the-numbers)). Several things that looked good on validation did not help on the leaderboard, and we report these as they are.
 
 ## 1. Data and validation protocol
 
@@ -105,7 +105,7 @@ For each model we match detections with score ≥ 0.3 to the ground truth and la
 
 ## 4. Final pipeline and what did not help
 
-Final model: RT-DETR-l at 1536 px, trained on all 63 clips, with inference at 1536 px and `conf=0.001`.
+Best single model: RT-DETR-l at 1536 px, trained on all 63 clips, with inference at 1536 px and `conf=0.001`. Final submission: the ensemble described at the end of this section (`src/hw2/final_ensemble.py`).
 
 | Submission | Description | Fold 0 mAP | Public LB |
 |---|---|---|---|
@@ -116,6 +116,10 @@ Final model: RT-DETR-l at 1536 px, trained on all 63 clips, with inference at 15
 | + flip TTA | same model, horizontal-flip TTA | 0.3180 | 0.3458 |
 | ensemble | RT-DETR (all) + TTA with Faster R-CNN (16-256 anchors), WBF 2:1, IoU 0.7 | 0.3322 | 0.3251 |
 | low-res augmentation | all-clips model trained with random down-sampling | 0.2961 | 0.3245 |
+| rescoring only | `rtdetr_all_1536` + Seq-NMS-style rescoring (§5.1) | n/a | 0.3505 |
+| WBF of 2 RT-DETR | `rtdetr_all_1536` and `rtdetr_x_all` (all clips), 1:1, IoU 0.7 | n/a | 0.3484 |
+| WBF of 7 RT-DETR | 2 all-clip models (weight 2) and 5 fold models (weight 1), IoU 0.7 | n/a | 0.3649 |
+| **final: WBF of 7 + rescoring** | same + Seq-NMS-style rescoring | n/a | **0.3675** |
 
 ![Fold-0 validation mAP against the public leaderboard score](images/val_vs_lb.png)
 
@@ -135,6 +139,8 @@ Inference variants on fold 0 (RT-DETR-l 1536):
 - **A resolution gap exists, but we cannot prove it is the cause.** The test set contains low-resolution clips that the labelled data lacks (§1). Degrading fold 0 to 800 px lowers the base model from 0.3096 to 0.2776 (AP_small 0.1024 to 0.0713), so the gap is real. We tried to close it with low-resolution augmentation (30% of images at 640-1000 px). It helped on degraded input (0.2776 to 0.2784, AP_small 0.0713 to 0.0814) but cost 0.0135 on clean input, and on the leaderboard the augmented all-clips model scored 0.3245 against 0.3465. So augmentation was not the fix, and whether this gap explains the ensemble's drop remains a hypothesis.
 
 ![Fold-0 mAP of the base model on clean and degraded frames](images/resolution_shift.png)
+
+**An ensemble of RT-DETR models helped on the leaderboard.** Fusing only RT-DETR models (unlike the Faster R-CNN ensemble above) gave the best result: two all-clip models +0.002 (0.3484), and seven models, adding the five fold models trained on 80% of the clips each, +0.018 (0.3649) over the single model. Temporal rescoring then added +0.004 to the single model and +0.003 to the ensemble. These ensembles cannot be validated on a held-out fold, because every fold model saw four of the other five folds, and the all-clip models saw all of them, so **the leaderboard is the only measurement we have for them**. On fold 0 a four-model RT-DETR ensemble had given only +0.001 (0.3108 against 0.3096, `ensembles.csv`), so validation again did not predict the leaderboard, this time in our favour. A possible explanation is that models trained on different subsets of clips make different errors on unseen clips, which averaging removes. We did not test this. This also means the choice of final submissions for these ensembles cannot rest on an internal score, which the task asks for. We state this as a limitation.
 
 **Longer training and higher resolution.** Two late fold-0 runs tested whether the final configuration was under-trained or under-resolved (notebook 07). Both start from the COCO checkpoint and use every 5th frame, like `rtdetr_s5_1536`.
 
@@ -166,7 +172,7 @@ We implemented Seq-NMS-style rescoring (Han et al., 2016) without the suppressio
 | Propagation (conf 0.6, decay 0.5) | 0.3097 | 0.5524 | 0.1023 |
 | Propagation (conf 0.8, decay 0.9) | 0.3088 | 0.5496 | 0.1022 |
 
-The naive window average gives nothing and rescoring along linked paths gives about +0.008 mAP, with the gain in AP50 (+0.012) larger than in AP_small, which falls slightly. Propagation gives nothing because the recall (AR500) does not increase. **Caveats:** the settings were chosen on the same fold they are evaluated on, and the gain is about half of the run-to-run noise from §2, so it is weak evidence at best. We did not put it into the final submission, and we have no leaderboard measurement for it.
+The naive window average gives nothing and rescoring along linked paths gives about +0.008 mAP, with the gain in AP50 (+0.012) larger than in AP_small, which falls slightly. Propagation gives nothing because the recall (AR500) does not increase. **Caveats:** the settings were chosen on the same fold they are evaluated on, and the gain is about half of the run-to-run noise from §2, so it is weak evidence at best. On the leaderboard it raised the single all-clip model from 0.3465 to 0.3505 and the seven-model ensemble from 0.3649 to 0.3675, so we kept it in the final submission. The leaderboard gain is small and the public score is computed on part of the test set only, so we do not claim more than a consistent small positive effect.
 
 ### 5.2 Visualisation and Weights & Biases
 
@@ -231,9 +237,9 @@ Transferring the head weights recovers the loss from random initialisation (0.21
 ## 6. Conclusions
 
 - A query-based detector (RT-DETR) at high input resolution was the best choice for this dataset. The advantage over CNN detectors (+0.02 to +0.03 mAP over the best CNN detector) and the benefit of 1536 px over 1344 px (clear on the leaderboard) are the only effects above the noise of our protocol. Going further, to 1792 px or to 24 epochs, did not help, and 24 epochs overfit.
-- Most of our other ideas (tiling, more frames, loss changes, extra detection levels, an ensemble with Faster R-CNN, low-resolution augmentation) gave nothing or hurt on the leaderboard. A lesson from this is that **a single validation fold is a weak guide**: the ensemble had the best fold-0 score of any inference variant and was our worst use of a submission.
-- The final result is 0.3465 mAP on the public leaderboard.
+- Most of our other ideas (tiling, more frames, loss changes, extra detection levels, an ensemble with Faster R-CNN, low-resolution augmentation) gave nothing or hurt on the leaderboard. What did help was an ensemble of RT-DETR models trained on different sets of clips (+0.018) and temporal rescoring (+0.003 to +0.004). A lesson from this is that **a single validation fold is a weak guide**: the Faster R-CNN ensemble had the best fold-0 score of any inference variant and was our worst use of a submission, while the RT-DETR ensemble showed almost nothing on fold 0 and was the largest leaderboard gain.
+- The final result is 0.3675 mAP on the public leaderboard (0.3465 for the best single model).
 
-**Limitations.** Detector families are compared on one validation fold (only the final RT-DETR configuration was cross-validated on all five), one or two seeds per configuration, a hidden test set that differs from the labelled data in resolution, and a temporal gain (+0.008) that is not confirmed on the leaderboard. All numbers are COCO mAP computed with our own evaluator on fold 0, except the leaderboard column.
+**Limitations.** Detector families are compared on one validation fold (only the final RT-DETR configuration was cross-validated on all five), one or two seeds per configuration, a hidden test set that differs from the labelled data in resolution, and gains from the ensemble and the temporal step that are measured only on the public leaderboard. All numbers are COCO mAP computed with our own evaluator on fold 0, except the leaderboard column.
 
 **Reproducing.** Code is in `src/hw2/` (data preparation `prep.py`, training `tv_train.py` and `ultra_train.py`, inference `infer.py`, post-processing `postprocess.py`, evaluation `evaluate.py`). Training ran on Kaggle T4 GPUs through the scripts in `kernels/`. All metrics are in `results/` and the analysis notebooks are in `notebooks/`.
