@@ -1,0 +1,15 @@
+train 2183 frames, val 1366 frames, device cuda
+{'epoch': 1, 'time_min': 6.4, 'lr': 0.009829629131445342, 'classification': 0.3952, 'bbox_regression': 0.259}
+{'epoch': 2, 'time_min': 12.8, 'lr': 0.009330127018922194, 'classification': 0.2448, 'bbox_regression': 0.2408, 'curve_mAP': 0.1991, 'curve_AP50': 0.3826, 'curve_AP75': 0.1772, 'curve_AP_small': 0.0357, 'curve_AP_medium': 0.16, 'curve_AP_large': 0.3257, 'curve_AR500': 0.3686}
+{'epoch': 3, 'time_min': 20.7, 'lr': 0.008535533905932738, 'classification': 0.2074, 'bbox_regression': 0.2312}
+{'epoch': 4, 'time_min': 27.2, 'lr': 0.0075, 'classification': 0.1856, 'bbox_regression': 0.2262, 'curve_mAP': 0.2321, 'curve_AP50': 0.4315, 'curve_AP75': 0.2155, 'curve_AP_small': 0.0395, 'curve_AP_medium': 0.1935, 'curve_AP_large': 0.3664, 'curve_AR500': 0.3657}
+{'epoch': 5, 'time_min': 35.3, 'lr': 0.006294095225512604, 'classification': 0.1727, 'bbox_regression': 0.2225}
+{'epoch': 6, 'time_min': 42.0, 'lr': 0.005, 'classification': 0.1615, 'bbox_regression': 0.2189, 'curve_mAP': 0.2409, 'curve_AP50': 0.446, 'curve_AP75': 0.2258, 'curve_AP_small': 0.0398, 'curve_AP_medium': 0.1967, 'curve_AP_large': 0.3913, 'curve_AR500': 0.3796}
+{'epoch': 7, 'time_min': 50.2, 'lr': 0.003705904774487397, 'classification': 0.1532, 'bbox_regression': 0.217}
+{'epoch': 8, 'time_min': 56.8, 'lr': 0.0025000000000000014, 'classification': 0.146, 'bbox_regression': 0.2142, 'curve_mAP': 0.2393, 'curve_AP50': 0.4507, 'curve_AP75': 0.2187, 'curve_AP_small': 0.0468, 'curve_AP_medium': 0.2076, 'curve_AP_large': 0.3702, 'curve_AR500': 0.3839}
+{'epoch': 9, 'time_min': 65.0, 'lr': 0.0014644660940672626, 'classification': 0.1411, 'bbox_regression': 0.213}
+{'epoch': 10, 'time_min': 71.6, 'lr': 0.0006698729810778065, 'classification': 0.1372, 'bbox_regression': 0.212, 'curve_mAP': 0.2437, 'curve_AP50': 0.4516, 'curve_AP75': 0.228, 'curve_AP_small': 0.0458, 'curve_AP_medium': 0.2123, 'curve_AP_large': 0.3751, 'curve_AR500': 0.3799}
+{'epoch': 11, 'time_min': 79.7, 'lr': 0.000170370868554659, 'classification': 0.1349, 'bbox_regression': 0.2118}
+{'epoch': 12, 'time_min': 86.3, 'lr': 0.0, 'classification': 0.1338, 'bbox_regression': 0.2108, 'curve_mAP': 0.2428, 'curve_AP50': 0.4508, 'curve_AP75': 0.2282, 'curve_AP_small': 0.0447, 'curve_AP_medium': 0.2086, 'curve_AP_large': 0.3747, 'curve_AR500': 0.3813}
+VAL {'mAP': 0.2412, 'AP50': 0.4495, 'AP75': 0.2262, 'AP_small': 0.0438, 'AP_medium': 0.2111, 'AP_large': 0.3631, 'AR500': 0.3826, 'AP_person': 0.2043, 'AP_bicycle': 0.0828, 'AP_car': 0.4818, 'AP_van': 0.2076, 'AP_truck': 0.1785, 'AP_tricycle': 0.2198, 'AP_bus': 0.4313, 'AP_motor': 0.1233, 'fps': 17.54, 'train_min': 97.9, 'n_train': 2183, 'n_val': 1366, 'gpu': 'Tesla T4'}
+done

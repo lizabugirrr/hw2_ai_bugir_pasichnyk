@@ -1,0 +1,22 @@
+{
+ "mAP": 0.2071,
+ "AP50": 0.4057,
+ "AP75": 0.1872,
+ "AP_small": 0.0666,
+ "AP_medium": 0.2223,
+ "AP_large": 0.4558,
+ "AR500": 0.3575,
+ "AP_person": 0.2651,
+ "AP_bicycle": 0.1393,
+ "AP_car": 0.4099,
+ "AP_van": 0.1221,
+ "AP_truck": 0.1885,
+ "AP_tricycle": 0.2301,
+ "AP_bus": 0.181,
+ "AP_motor": 0.1208,
+ "fps": 14.49,
+ "train_min": 104.5,
+ "n_train": 2186,
+ "n_val": 1360,
+ "gpu": "Tesla T4"
+}
