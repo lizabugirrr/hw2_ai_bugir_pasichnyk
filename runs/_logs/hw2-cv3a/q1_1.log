@@ -1,0 +1,26 @@
+train 2191 frames, val 1348 frames, device cuda
+Downloading: "https://download.pytorch.org/models/retinanet_resnet50_fpn_v2_coco-5905b1c5.pth" to /root/.cache/torch/hub/checkpoints/retinanet_resnet50_fpn_v2_coco-5905b1c5.pth
+
+  0%|          | 0.00/146M [00:00<?, ?B/s]
+  7%|▋         | 10.6M/146M [00:00<00:01, 111MB/s]
+ 19%|█▉        | 27.6M/146M [00:00<00:00, 151MB/s]
+ 32%|███▏      | 46.4M/146M [00:00<00:00, 171MB/s]
+ 45%|████▌     | 65.8M/146M [00:00<00:00, 184MB/s]
+ 58%|█████▊    | 85.2M/146M [00:00<00:00, 191MB/s]
+ 72%|███████▏  | 105M/146M [00:00<00:00, 195MB/s] 
+ 86%|████████▌ | 126M/146M [00:00<00:00, 204MB/s]
+100%|██████████| 146M/146M [00:00<00:00, 195MB/s]
+{'epoch': 1, 'time_min': 6.4, 'lr': 0.009829629131445342, 'classification': 0.5175, 'bbox_regression': 0.4113}
+{'epoch': 2, 'time_min': 12.6, 'lr': 0.009330127018922194, 'classification': 0.3181, 'bbox_regression': 0.3052, 'curve_mAP': 0.105, 'curve_AP50': 0.2634, 'curve_AP75': 0.068, 'curve_AP_small': 0.0483, 'curve_AP_medium': 0.1086, 'curve_AP_large': 0.212, 'curve_AR500': 0.2868}
+{'epoch': 3, 'time_min': 20.6, 'lr': 0.008535533905932738, 'classification': 0.2755, 'bbox_regression': 0.2867}
+{'epoch': 4, 'time_min': 26.9, 'lr': 0.0075, 'classification': 0.2553, 'bbox_regression': 0.2785, 'curve_mAP': 0.1324, 'curve_AP50': 0.3178, 'curve_AP75': 0.0935, 'curve_AP_small': 0.0534, 'curve_AP_medium': 0.1368, 'curve_AP_large': 0.2646, 'curve_AR500': 0.3254}
+{'epoch': 5, 'time_min': 35.0, 'lr': 0.006294095225512605, 'classification': 0.2377, 'bbox_regression': 0.2716}
+{'epoch': 6, 'time_min': 41.3, 'lr': 0.005, 'classification': 0.2266, 'bbox_regression': 0.2666, 'curve_mAP': 0.1418, 'curve_AP50': 0.337, 'curve_AP75': 0.1014, 'curve_AP_small': 0.0545, 'curve_AP_medium': 0.1494, 'curve_AP_large': 0.2634, 'curve_AR500': 0.3376}
+{'epoch': 7, 'time_min': 49.3, 'lr': 0.003705904774487397, 'classification': 0.2136, 'bbox_regression': 0.2628}
+{'epoch': 8, 'time_min': 55.6, 'lr': 0.0025000000000000014, 'classification': 0.2051, 'bbox_regression': 0.2604, 'curve_mAP': 0.1456, 'curve_AP50': 0.3451, 'curve_AP75': 0.1039, 'curve_AP_small': 0.0542, 'curve_AP_medium': 0.1523, 'curve_AP_large': 0.2883, 'curve_AR500': 0.3365}
+{'epoch': 9, 'time_min': 63.6, 'lr': 0.0014644660940672626, 'classification': 0.1982, 'bbox_regression': 0.2578}
+{'epoch': 10, 'time_min': 69.9, 'lr': 0.0006698729810778076, 'classification': 0.194, 'bbox_regression': 0.2559, 'curve_mAP': 0.1493, 'curve_AP50': 0.3497, 'curve_AP75': 0.1092, 'curve_AP_small': 0.0579, 'curve_AP_medium': 0.1534, 'curve_AP_large': 0.3006, 'curve_AR500': 0.338}
+{'epoch': 11, 'time_min': 77.9, 'lr': 0.000170370868554659, 'classification': 0.1915, 'bbox_regression': 0.2549}
+{'epoch': 12, 'time_min': 84.2, 'lr': 0.0, 'classification': 0.1899, 'bbox_regression': 0.2546, 'curve_mAP': 0.149, 'curve_AP50': 0.3495, 'curve_AP75': 0.1109, 'curve_AP_small': 0.0572, 'curve_AP_medium': 0.1532, 'curve_AP_large': 0.2952, 'curve_AR500': 0.3381}
+VAL {'mAP': 0.1476, 'AP50': 0.3466, 'AP75': 0.1045, 'AP_small': 0.0561, 'AP_medium': 0.1495, 'AP_large': 0.2738, 'AR500': 0.3384, 'AP_person': 0.1692, 'AP_bicycle': 0.0262, 'AP_car': 0.3613, 'AP_van': 0.1741, 'AP_truck': 0.0622, 'AP_tricycle': 0.1483, 'AP_bus': 0.1182, 'AP_motor': 0.1281, 'fps': 17.0, 'train_min': 94.3, 'n_train': 2191, 'n_val': 1348, 'gpu': 'Tesla T4'}
+done

@@ -106,9 +106,9 @@ def make_folds(frames: pd.DataFrame, n_folds: int = 5) -> pd.DataFrame:
     return clips[["clip", "n_frames", "fold"]]
 
 
-def subsample(frames: pd.DataFrame, step: int) -> pd.DataFrame:
-    """Keep every `step`-th frame of each clip (frames are consecutive, 1-based)."""
-    return frames[(frames.frame - 1) % step == 0]
+def subsample(frames: pd.DataFrame, step: int, offset: int = 0) -> pd.DataFrame:
+    """Keep every `step`-th frame of each clip (frames are consecutive, 1-based), starting at `offset`."""
+    return frames[(frames.frame - 1) % step == offset]
 
 
 def fold_frames(frames: pd.DataFrame, folds: pd.DataFrame, fold: int, inside: bool = True) -> pd.DataFrame:

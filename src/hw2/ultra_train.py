@@ -33,6 +33,7 @@ EXTRA = dict(
     val_fold=0, step=10, val_step=4, curve_step=20,
     lowres_p=0.0, lowres_w=(640, 1000),  # train-time degradation: downscale to this width and back up (test has 680-960 px clips)
     head_shift=None,       # copy yolo11s.pt detection-head branches into a custom head; value = index of the first copied level
+    frame_offset=0,        # which frames of each step-block to train on (prep keeps every 2nd frame, so use even offsets)
     train_all=False,       # also train on the validation fold (final model; fold-0 metrics are then optimistic)
     weights=None,          # load these weights into a custom model yaml
     test_imgsz=None,       # defaults to imgsz
@@ -221,7 +222,7 @@ def main():
     # dataset lists: Ultralytics finds labels by replacing /images/ with /labels/
     prep = Path(a.prep).resolve()
     pf = pd.read_csv(prep / "frames.csv")
-    train = subsample(pf if extra["train_all"] else pf[pf.fold != extra["val_fold"]], extra["step"])
+    train = subsample(pf if extra["train_all"] else pf[pf.fold != extra["val_fold"]], extra["step"], extra["frame_offset"])
     if a.max_train:
         train = train.sample(a.max_train, random_state=0)
     curve_masked = subsample(pf[pf.fold == extra["val_fold"]], extra["curve_step"])
