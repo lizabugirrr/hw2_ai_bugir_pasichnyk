@@ -11,3 +11,4 @@ wbf2_rtdetr,WBF of rtdetr_all_1536 and rtdetr_x_all (1:1; IoU 0.7),,0.34841
 wbf7_rtdetr,WBF of 7 RT-DETR models (2 all-clip x2 weight + 5 fold models; IoU 0.7),,0.36494
 wbf7_rtdetr+seq,same + Seq-NMS-style rescoring,,0.36751
 wbf10_rtdetr+seq,WBF of 10 RT-DETR (rtdetr_all_1536 and rtdetr_x_all x2 weight + 8 all-clip models with different frame offsets and seeds; IoU 0.7) + Seq-NMS-style rescoring,,0.37238
+wbf15_rtdetr+seq,WBF of 15 RT-DETR (the 7 earlier members + 8 all-clip models with different frame offsets and seeds; IoU 0.7) + Seq-NMS-style rescoring,,0.37183
