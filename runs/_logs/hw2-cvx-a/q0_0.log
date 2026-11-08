@@ -1,0 +1,28 @@
+train 2183 frames, val 1366 frames, device cuda
+Downloading: "https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_v2_coco-dd69338a.pth" to /root/.cache/torch/hub/checkpoints/fasterrcnn_resnet50_fpn_v2_coco-dd69338a.pth
+
+  0%|          | 0.00/167M [00:00<?, ?B/s]
+  8%|▊         | 13.2M/167M [00:00<00:01, 138MB/s]
+ 19%|█▉        | 31.8M/167M [00:00<00:00, 170MB/s]
+ 30%|██▉       | 49.6M/167M [00:00<00:00, 178MB/s]
+ 40%|███▉      | 66.6M/167M [00:00<00:00, 175MB/s]
+ 51%|█████     | 85.0M/167M [00:00<00:00, 181MB/s]
+ 62%|██████▏   | 103M/167M [00:00<00:00, 184MB/s] 
+ 72%|███████▏  | 121M/167M [00:00<00:00, 185MB/s]
+ 83%|████████▎ | 140M/167M [00:00<00:00, 188MB/s]
+ 94%|█████████▍| 158M/167M [00:00<00:00, 188MB/s]
+100%|██████████| 167M/167M [00:00<00:00, 184MB/s]
+{'epoch': 1, 'time_min': 7.7, 'lr': 0.009829629131445342, 'loss_classifier': 0.4565, 'loss_box_reg': 0.6046, 'loss_objectness': 0.1285, 'loss_rpn_box_reg': 0.1206}
+{'epoch': 2, 'time_min': 15.3, 'lr': 0.009330127018922194, 'loss_classifier': 0.2702, 'loss_box_reg': 0.5202, 'loss_objectness': 0.0541, 'loss_rpn_box_reg': 0.0969, 'curve_mAP': 0.2513, 'curve_AP50': 0.5213, 'curve_AP75': 0.2217, 'curve_AP_small': 0.0622, 'curve_AP_medium': 0.2213, 'curve_AP_large': 0.3723, 'curve_AR500': 0.4595}
+{'epoch': 3, 'time_min': 24.5, 'lr': 0.008535533905932738, 'loss_classifier': 0.2394, 'loss_box_reg': 0.4954, 'loss_objectness': 0.043, 'loss_rpn_box_reg': 0.0877}
+{'epoch': 4, 'time_min': 32.2, 'lr': 0.0075, 'loss_classifier': 0.2194, 'loss_box_reg': 0.479, 'loss_objectness': 0.0364, 'loss_rpn_box_reg': 0.0816, 'curve_mAP': 0.2601, 'curve_AP50': 0.5252, 'curve_AP75': 0.2343, 'curve_AP_small': 0.0532, 'curve_AP_medium': 0.2282, 'curve_AP_large': 0.4008, 'curve_AR500': 0.4565}
+{'epoch': 5, 'time_min': 41.4, 'lr': 0.006294095225512604, 'loss_classifier': 0.2038, 'loss_box_reg': 0.4688, 'loss_objectness': 0.0321, 'loss_rpn_box_reg': 0.0774}
+{'epoch': 6, 'time_min': 49.1, 'lr': 0.005, 'loss_classifier': 0.1926, 'loss_box_reg': 0.457, 'loss_objectness': 0.0288, 'loss_rpn_box_reg': 0.074, 'curve_mAP': 0.2846, 'curve_AP50': 0.5666, 'curve_AP75': 0.2521, 'curve_AP_small': 0.0648, 'curve_AP_medium': 0.2635, 'curve_AP_large': 0.4221, 'curve_AR500': 0.4724}
+{'epoch': 7, 'time_min': 58.3, 'lr': 0.003705904774487397, 'loss_classifier': 0.1819, 'loss_box_reg': 0.4454, 'loss_objectness': 0.0261, 'loss_rpn_box_reg': 0.0699}
+{'epoch': 8, 'time_min': 65.9, 'lr': 0.0025000000000000014, 'loss_classifier': 0.1726, 'loss_box_reg': 0.434, 'loss_objectness': 0.0239, 'loss_rpn_box_reg': 0.0676, 'curve_mAP': 0.2671, 'curve_AP50': 0.5296, 'curve_AP75': 0.2357, 'curve_AP_small': 0.0531, 'curve_AP_medium': 0.2338, 'curve_AP_large': 0.4173, 'curve_AR500': 0.4618}
+{'epoch': 9, 'time_min': 75.1, 'lr': 0.0014644660940672626, 'loss_classifier': 0.1676, 'loss_box_reg': 0.4267, 'loss_objectness': 0.0218, 'loss_rpn_box_reg': 0.0658}
+{'epoch': 10, 'time_min': 82.8, 'lr': 0.0006698729810778065, 'loss_classifier': 0.1622, 'loss_box_reg': 0.4195, 'loss_objectness': 0.0206, 'loss_rpn_box_reg': 0.0635, 'curve_mAP': 0.2775, 'curve_AP50': 0.5393, 'curve_AP75': 0.2472, 'curve_AP_small': 0.0569, 'curve_AP_medium': 0.2604, 'curve_AP_large': 0.4105, 'curve_AR500': 0.4654}
+{'epoch': 11, 'time_min': 91.9, 'lr': 0.000170370868554659, 'loss_classifier': 0.1594, 'loss_box_reg': 0.4159, 'loss_objectness': 0.0199, 'loss_rpn_box_reg': 0.0632}
+{'epoch': 12, 'time_min': 99.6, 'lr': 0.0, 'loss_classifier': 0.158, 'loss_box_reg': 0.4133, 'loss_objectness': 0.0198, 'loss_rpn_box_reg': 0.0621, 'curve_mAP': 0.2812, 'curve_AP50': 0.5439, 'curve_AP75': 0.2474, 'curve_AP_small': 0.0572, 'curve_AP_medium': 0.2637, 'curve_AP_large': 0.4171, 'curve_AR500': 0.4645}
+VAL {'mAP': 0.2798, 'AP50': 0.546, 'AP75': 0.2472, 'AP_small': 0.0542, 'AP_medium': 0.2547, 'AP_large': 0.4214, 'AR500': 0.4674, 'AP_person': 0.2381, 'AP_bicycle': 0.1116, 'AP_car': 0.4807, 'AP_van': 0.2705, 'AP_truck': 0.2548, 'AP_tricycle': 0.2751, 'AP_bus': 0.4417, 'AP_motor': 0.168, 'fps': 11.29, 'train_min': 108.1, 'n_train': 2183, 'n_val': 1366, 'gpu': 'Tesla T4'}
+done
