@@ -20,6 +20,9 @@ from .submission import to_submission
 
 MEMBERS = [("rtdetr_all_1536", 2), ("rtdetr_x_all", 2), ("rtdetr_s5_1536", 1), ("rtdetr_cv_f1", 1),
            ("rtdetr_cv_f2", 1), ("rtdetr_cv_f3", 1), ("rtdetr_cv_f4", 1)]
+# Eight more all-clip members, each trained on a different frame offset and seed (see kernels/launch_ens_more.sh)
+EXTRA = [(f"rtdetr_all_o{o}_s{s}", 1) for o, s in [(2, 1), (4, 2), (2, 3), (4, 4), (6, 5), (8, 6), (6, 7), (8, 8)]]
+SETS = {"base": MEMBERS, "all": MEMBERS + EXTRA, "extra": MEMBERS[:2] + EXTRA}
 
 
 def main():
@@ -27,12 +30,14 @@ def main():
     ap.add_argument("--runs", default="runs")
     ap.add_argument("--out", required=True)
     ap.add_argument("--iou", type=float, default=0.7, help="WBF IoU threshold")
+    ap.add_argument("--set", default="base", choices=sorted(SETS), help="which ensemble members to fuse")
     ap.add_argument("--no_seq", action="store_true", help="skip the temporal rescoring")
     a = ap.parse_args()
 
+    members = SETS[a.set]
     test = load_test()
-    preds = [pd.read_parquet(f"{a.runs}/{n}/test_preds.parquet") for n, _ in MEMBERS]
-    fused = weighted_boxes_fusion(preds, weights=[w for _, w in MEMBERS], iou_thr=a.iou)
+    preds = [pd.read_parquet(f"{a.runs}/{n}/test_preds.parquet") for n, _ in members]
+    fused = weighted_boxes_fusion(preds, weights=[w for _, w in members], iou_thr=a.iou)
     fused = fused[fused.score >= 0.001]
     if not a.no_seq:
         fused = seq_rescore(fused, test, iou_thr=0.7, beta=0.5, mode="mean")

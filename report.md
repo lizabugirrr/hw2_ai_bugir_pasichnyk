@@ -9,7 +9,7 @@ date: 2026-11-03
 
 We detect 8 object classes (pedestrian and people merged into `person`, awning-tricycle merged into `tricycle`, plus bicycle, car, van, truck, bus, motor) in drone video frames. The data are 63 labelled VisDrone-VID clips (27,047 frames, 1.22 M boxes) and a hidden test set of 48 clips (3,811 frames). The metric is COCO mAP@[.5:.95].
 
-Our best single model is **RT-DETR-l at 1536 px trained on all 63 clips** (public leaderboard 0.3465). Our final submission is a weighted-box-fusion ensemble of seven RT-DETR models trained on different sets of clips, followed by temporal rescoring along each clip, and it scores **0.3675** on the public leaderboard (first place at the time of writing). All model comparisons are made on one clip-level validation fold, so differences smaller than about 0.02 mAP should not be read as real (see [Noise](#how-much-to-trust-the-numbers)). Several things that looked good on validation did not help on the leaderboard, and we report these as they are.
+Our best single model is **RT-DETR-l at 1536 px trained on all 63 clips** (public leaderboard 0.3465). Our final submission is a weighted-box-fusion ensemble of ten RT-DETR models trained on different frames or sets of clips, followed by temporal rescoring along each clip, and it scores **0.3724** on the public leaderboard (first place at the time of writing, 0.0009 ahead of the second team, which is inside the noise of the public part of the test set). Model comparisons were first made on one clip-level validation fold and then repeated with five-fold cross-validation; differences smaller than about 0.02 mAP should not be read as real (see [Noise](#how-much-to-trust-the-numbers)). Several things that looked good on validation did not help on the leaderboard, and we report these as they are.
 
 ## 1. Data and validation protocol
 
@@ -77,31 +77,37 @@ Every family has a baseline and at least two modified runs. "fps" is the through
 
 Three YOLO runs with an identical configuration span 0.022 mAP: 0.2294 (seed 1), 0.2449 and 0.2514 (both seed 0; training on a GPU is not bit-exact, so the same seed does not give the same model). Two RT-DETR runs differ by 0.006, and two runs of the P2-head YOLO by 0.018 (§5.3). Since we have a single validation fold of about 12 clips, we treat differences below roughly 0.02 as inconclusive. Only the family ranking (RT-DETR above the rest) is clearly outside this noise on validation; the effect of the input resolution is supported mainly by the leaderboard.
 
-**Full cross-validation of the final configuration.** The task asks for cross-validation throughout, but the budget allowed it only for our best configuration. We trained RT-DETR-l at 1536 px (same settings as `rtdetr_s5_1536`) on each of the five clip-level folds and evaluated it on the held-out fold:
+**Full cross-validation of every model.** The task asks for cross-validation, so every configuration in this report was trained and evaluated on each of the five clip-level folds (same settings as on fold 0, one seed; the runs on folds 1-4 were done on Kaggle T4 GPUs, those of the extra variants on a teammate's account). Mean mAP over the five held-out folds, best first:
 
-| Held-out fold | mAP | AP50 | AP_small | AP_medium | AP_large |
-|---|---|---|---|---|---|
-| 0 | 0.3096 | 0.5510 | 0.1024 | 0.2329 | 0.4909 |
-| 1 | 0.3148 | 0.5877 | 0.0878 | 0.3166 | 0.3850 |
-| 2 | 0.2674 | 0.5085 | 0.1185 | 0.2802 | 0.4377 |
-| 3 | 0.2652 | 0.4898 | 0.0914 | 0.2786 | 0.4666 |
-| 4 | 0.2737 | 0.5123 | 0.1449 | 0.2848 | 0.5121 |
-| **mean ± std** | **0.2861 ± 0.0241** | 0.5299 ± 0.0392 | 0.1090 ± 0.0234 | 0.2786 ± 0.0299 | 0.4585 ± 0.0496 |
+| Model (trained on 4 folds, tested on the fifth) | f0 | f1 | f2 | f3 | f4 | mean ± std |
+|---|---|---|---|---|---|---|
+| RT-DETR-l 1536 px (final configuration) | 0.3096 | 0.3148 | 0.2674 | 0.2652 | 0.2737 | **0.2861** ± 0.0241 |
+| RT-DETR-l 1344, re-weighted matcher cost | 0.3004 | 0.3054 | 0.2523 | 0.2720 | 0.2724 | **0.2805** ± 0.0221 |
+| RT-DETR-l 1344 px | 0.2971 | 0.3096 | 0.2627 | 0.2663 | 0.2651 | **0.2802** ± 0.0217 |
+| Faster R-CNN (default anchors) | 0.2595 | 0.2696 | 0.2190 | 0.2071 | 0.2379 | **0.2386** ± 0.0263 |
+| Faster R-CNN + GIoU box loss | 0.2608 | 0.2798 | 0.2130 | 0.2091 | 0.2298 | **0.2385** ± 0.0308 |
+| Faster R-CNN, 16 px anchors | 0.2736 | 0.2700 | 0.2100 | 0.2062 | 0.2316 | **0.2383** ± 0.0321 |
+| YOLO11s at 1920 px | 0.2511 | 0.2624 | 0.2092 | 0.2123 | 0.2340 | **0.2338** ± 0.0234 |
+| YOLO11s + NWD loss | 0.2489 | 0.2442 | 0.2071 | 0.1987 | 0.2236 | **0.2245** ± 0.0221 |
+| YOLO11s | 0.2449 | 0.2546 | 0.1977 | 0.2033 | 0.2165 | **0.2234** ± 0.0252 |
+| YOLO11s P3/P4 head | 0.2308 | 0.2504 | 0.1979 | 0.2064 | 0.2195 | **0.2210** ± 0.0207 |
+| YOLO11s + P2 head, head-weight transfer | 0.2446 | 0.2526 | 0.1813 | 0.2117 | 0.2138 | **0.2208** ± 0.0286 |
+| YOLO11s P2 head without P5 | 0.2210 | 0.2577 | 0.1900 | 0.2074 | 0.2023 | **0.2157** ± 0.0260 |
+| YOLO11s + P2 head | 0.2178 | 0.2561 | 0.1819 | 0.2095 | 0.1850 | **0.2101** ± 0.0300 |
+| RetinaNet v2 | 0.2287 | 0.2412 | 0.1801 | 0.1886 | 0.1940 | **0.2065** ± 0.0268 |
+| RetinaNet, 12 px anchors | 0.1834 | 0.1859 | 0.1476 | 0.1591 | 0.1511 | **0.1654** ± 0.0181 |
 
-The mAP differs by up to 0.05 between folds (0.265 to 0.315), more than twice the run-to-run noise above. Fold 0, on which every other comparison in this report is made, is one of the two easiest folds (0.3096 against a mean of 0.2861), so our fold-0 numbers are optimistic by about 0.02 in absolute terms. We expect this to shift all models by a similar amount, but we did not check that for the other detector families, whose comparison therefore still rests on a single fold. The size of the fold-to-fold spread also means that a difference between two models on one fold is only informative if it is large compared to it, and it is one more reason why the fold-0 ensemble result did not carry over to the leaderboard.
+(`results/cv_*.csv`; the RT-DETR-l 1536 px row also gives AP50 0.5299 ± 0.0392, AP_small 0.1090 ± 0.0234 and AP_large 0.4585 ± 0.0496.)
 
-## 3. Where the errors are
+What the cross-validation shows:
 
-For each model we match detections with score ≥ 0.3 to the ground truth and label them as correct, duplicate, wrong class, badly localised, inside an ignored region, or background. We also count misses by object size. The full tables and the three automatically selected failure frames per family are in notebooks 02-04.
+- **The family ranking holds on every fold.** RT-DETR-l is above Faster R-CNN, which is above YOLO11s, which is above RetinaNet, on all five folds without exception. The mean gap between RT-DETR (0.2802 at 1344 px) and Faster R-CNN (0.2386) is 0.04, and the smallest per-fold gap is 0.03.
+- **The mAP differs by up to 0.05 between folds** (0.265 to 0.315 for RT-DETR 1536 px), more than twice the run-to-run noise above. Folds 0 and 1 are the two easiest for every model, so the fold-0 numbers in the rest of the report are optimistic by about 0.02.
+- **Tuning that looked good on fold 0 did not carry over.** On fold 0 the 16 px anchors raised Faster R-CNN from 0.2595 to 0.2736 and NWD raised YOLO11s from 0.2449 to 0.2489; over the five folds the means are 0.2383 against 0.2386 and 0.2245 against 0.2234, i.e. no difference. The 12 px anchors for RetinaNet looked worse on fold 0 (0.1834 against 0.2287) and are worse on average (0.1654 against 0.2065). The re-weighted matcher cost of RT-DETR is 0.2805 against 0.2802. Only the larger input of YOLO11s (1920 px) is above its baseline on average (+0.010), which is inside the seed noise.
+- **None of our custom YOLO heads helps** (§5.3): the four head variants are 0.2101 to 0.2210 against 0.2234 for the standard head.
+- **Resolution for RT-DETR:** 1536 px is +0.006 over 1344 px on the mean, small compared with the fold-to-fold spread, so the leaderboard (0.3426 against 0.3137 for models trained on the same fold) remains the clearer evidence for it.
 
-![Failure cases, Faster R-CNN](images/fail_frcnn.png)
-![Failure cases, one-stage detectors](images/fail_onestage.png)
-![Failure cases, RT-DETR](images/fail_rtdetr.png)
-
-- **Small objects are missed.** Recall on small objects is 0.29-0.37 for the CNN detectors and about 0.52 for RT-DETR, while recall on large objects is 0.85-0.93 for all of them. The frames with the most missed small objects come from the same clip (`uav0000124_00944`) for all three families. In the one selected for Faster R-CNN, 29 of the 132 ground-truth objects are small and unmatched.
-- **Class confusions come from similar vehicle types.** The frame with the most class confusions (`uav0000288_00001`) is the same for all three families. Wrong-class detections are 13% of the correct ones for Faster R-CNN and YOLO, 17% for RT-DETR and 26% for RetinaNet. Per-class AP is lowest for bicycle (0.05-0.12), motor (0.07-0.16) and person (0.15-0.24), the smallest classes.
-- **Many false alarms are inside ignored regions.** At score ≥ 0.3 the number of detections in ignored regions is large for every model and is lowest for the two-stage and one-stage detectors (11k-16k) and highest for RT-DETR (29k-34k). These are not penalised by the metric. The counts are not directly comparable between frameworks, because RT-DETR scores are distributed differently, so we do not draw conclusions from the false-alarm totals.
-- **RetinaNet and Faster R-CNN produce more duplicates** than the others (1,850 and 425 against 355-406 for YOLO), as expected from their dense anchors plus NMS, whereas RT-DETR's one-to-one matching removes most of this need.
+Because the folds differ so much, a difference between two models on one fold is informative only if it is large compared with the fold-to-fold spread. This is the main reason why the fold-0 ensemble result did not carry over to the leaderboard.
 
 ## 4. Final pipeline and what did not help
 
@@ -119,7 +125,8 @@ Best single model: RT-DETR-l at 1536 px, trained on all 63 clips, with inference
 | rescoring only | `rtdetr_all_1536` + Seq-NMS-style rescoring (§5.1) | n/a | 0.3505 |
 | WBF of 2 RT-DETR | `rtdetr_all_1536` and `rtdetr_x_all` (all clips), 1:1, IoU 0.7 | n/a | 0.3484 |
 | WBF of 7 RT-DETR | 2 all-clip models (weight 2) and 5 fold models (weight 1), IoU 0.7 | n/a | 0.3649 |
-| **final: WBF of 7 + rescoring** | same + Seq-NMS-style rescoring | n/a | **0.3675** |
+| WBF of 7 + rescoring | same + Seq-NMS-style rescoring | n/a | 0.3675 |
+| **final: WBF of 10 + rescoring** | 2 big all-clip models and 8 all-clip RT-DETR-l 1536 models (different training frames and seeds), IoU 0.7, + rescoring | n/a | **0.3724** |
 
 ![Fold-0 validation mAP against the public leaderboard score](images/val_vs_lb.png)
 
@@ -141,6 +148,8 @@ Inference variants on fold 0 (RT-DETR-l 1536):
 ![Fold-0 mAP of the base model on clean and degraded frames](images/resolution_shift.png)
 
 **An ensemble of RT-DETR models helped on the leaderboard.** Fusing only RT-DETR models (unlike the Faster R-CNN ensemble above) gave the best result: two all-clip models +0.002 (0.3484), and seven models, adding the five fold models trained on 80% of the clips each, +0.018 (0.3649) over the single model. Temporal rescoring then added +0.004 to the single model and +0.003 to the ensemble. These ensembles cannot be validated on a held-out fold, because every fold model saw four of the other five folds, and the all-clip models saw all of them, so **the leaderboard is the only measurement we have for them**. On fold 0 a four-model RT-DETR ensemble had given only +0.001 (0.3108 against 0.3096, `ensembles.csv`), so validation again did not predict the leaderboard, this time in our favour. A possible explanation is that models trained on different subsets of clips make different errors on unseen clips, which averaging removes. We did not test this. This also means the choice of final submissions for these ensembles cannot rest on an internal score, which the task asks for. We state this as a limitation.
+
+**More members trained on all clips.** The ten-model ensemble replaces the five fold models by eight further RT-DETR-l 1536 models, each trained on all 63 clips but on a different set of frames (frame offsets 2, 4, 6, 8 of every 10) and with a different seed, and fuses them with `rtdetr_all_1536` and `rtdetr_x_all` before the same rescoring. It scores 0.3724, +0.005 over the seven-model version. We have no held-out measurement for it either, and the 0.0009 lead over the second place is too small to read as a real difference. `final_ensemble.py --set extra` rebuilds it.
 
 **Longer training and higher resolution.** Two late fold-0 runs tested whether the final configuration was under-trained or under-resolved (notebook 07). Both start from the COCO checkpoint and use every 5th frame, like `rtdetr_s5_1536`.
 
@@ -236,10 +245,10 @@ Transferring the head weights recovers the loss from random initialisation (0.21
 
 ## 6. Conclusions
 
-- A query-based detector (RT-DETR) at high input resolution was the best choice for this dataset. The advantage over CNN detectors (+0.02 to +0.03 mAP over the best CNN detector) and the benefit of 1536 px over 1344 px (clear on the leaderboard) are the only effects above the noise of our protocol. Going further, to 1792 px or to 24 epochs, did not help, and 24 epochs overfit.
-- Most of our other ideas (tiling, more frames, loss changes, extra detection levels, an ensemble with Faster R-CNN, low-resolution augmentation) gave nothing or hurt on the leaderboard. What did help was an ensemble of RT-DETR models trained on different sets of clips (+0.018) and temporal rescoring (+0.003 to +0.004). A lesson from this is that **a single validation fold is a weak guide**: the Faster R-CNN ensemble had the best fold-0 score of any inference variant and was our worst use of a submission, while the RT-DETR ensemble showed almost nothing on fold 0 and was the largest leaderboard gain.
-- The final result is 0.3675 mAP on the public leaderboard (0.3465 for the best single model).
+- A query-based detector (RT-DETR) at high input resolution was the best choice for this dataset. The advantage over CNN detectors (+0.04 mean mAP over the best CNN detector, Faster R-CNN, on five folds) and the benefit of 1536 px over 1344 px (clear on the leaderboard) are the only effects above the noise of our protocol. Going further, to 1792 px or to 24 epochs, did not help, and 24 epochs overfit.
+- Most of our other ideas (tiling, more frames, loss changes, extra detection levels, an ensemble with Faster R-CNN, low-resolution augmentation) gave nothing or hurt on the leaderboard. What did help was an ensemble of RT-DETR models trained on different sets of clips or frames (+0.018 for seven models, +0.023 for ten) and temporal rescoring (+0.003 to +0.004). A lesson from this is that **a single validation fold is a weak guide**: the Faster R-CNN ensemble had the best fold-0 score of any inference variant and was our worst use of a submission, while the RT-DETR ensemble showed almost nothing on fold 0 and was the largest leaderboard gain.
+- The final result is 0.3724 mAP on the public leaderboard (0.3465 for the best single model).
 
-**Limitations.** Detector families are compared on one validation fold (only the final RT-DETR configuration was cross-validated on all five), one or two seeds per configuration, a hidden test set that differs from the labelled data in resolution, and gains from the ensemble and the temporal step that are measured only on the public leaderboard. All numbers are COCO mAP computed with our own evaluator on fold 0, except the leaderboard column.
+**Limitations.** Every configuration was cross-validated, but with one seed per fold (the seed noise of about 0.02 is as large as most differences between variants), a hidden test set that differs from the labelled data in resolution, and gains from the ensemble and the temporal step that are measured only on the public leaderboard. All numbers are COCO mAP computed with our own evaluator on fold 0, except the leaderboard column.
 
 **Reproducing.** Code is in `src/hw2/` (data preparation `prep.py`, training `tv_train.py` and `ultra_train.py`, inference `infer.py`, post-processing `postprocess.py`, evaluation `evaluate.py`). Training ran on Kaggle T4 GPUs through the scripts in `kernels/`. All metrics are in `results/` and the analysis notebooks are in `notebooks/`.
