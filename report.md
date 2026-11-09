@@ -256,7 +256,7 @@ The P2 head was meant to find more small objects, and it does not. AP_small is 0
 
 ![Failure cases of the reference YOLO11s (left) and the P2 head (right)](images/fail_arch.png)
 
-Transferring the head weights recovers the loss from random initialisation (0.2178 to 0.2446 and 0.2269) but does not go beyond the pretrained model. The P2 head costs about 30% of the speed. Our conclusion is limited to 12 epochs and at most two runs per variant. Given the RT-DETR result in §4, we do not expect longer training to change it on this amount of data, but we did not test that for YOLO.
+Transferring the head weights recovers the loss from random initialisation (0.2178 to 0.2446 and 0.2269) but does not go beyond the pretrained model. The P2 head costs about 30% of the speed. Cross-validation (§2) confirms it beyond this one fold: over the five folds the head variants average 0.2101 (P2), 0.2208 (P2 with transferred weights), 0.2157 (P2 without P5) and 0.2210 (P3/P4 only), against 0.2234 for the standard head, and no variant is above the standard head on more than three folds out of five, by at most 0.008 where it is. Our conclusion is still limited to 12 epochs and one seed per fold. Given the RT-DETR result in §4, we do not expect longer training to change it on this amount of data, but we did not test that for YOLO.
 
 ## 6. Conclusions
 
