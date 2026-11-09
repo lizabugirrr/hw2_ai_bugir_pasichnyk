@@ -29,7 +29,7 @@ Our best single model is **RT-DETR-l at 1536 px trained on all 63 clips** (publi
 ![Class distribution](images/eda_classes.png)
 ![Objects per frame](images/eda_density.png)
 
-**Split.** Frames of one clip must not appear on both sides, because neighbouring frames are near-duplicates. We use 5-fold `GroupKFold` by clip and, because of the compute budget (Kaggle T4, 30 GPU-hours per week), validate every model on **fold 0 only** (1,354 validation frames, one frame in four of the held-out clips). Training uses 2,189 frames (every 10th frame of the other folds) unless stated otherwise. Every detector is trained for 12 epochs (one later run with 24 epochs is in §4). Fold assignments are stored in `src/hw2/configs/folds.csv`, because `GroupKFold` returns different folds in different scikit-learn versions.
+**Split.** Frames of one clip must not appear on both sides, because neighbouring frames are near-duplicates. We use 5-fold `GroupKFold` by clip. All tuning experiments in §2 were first run on **fold 0** (1,354 validation frames, one frame in four of the held-out clips), because of the compute budget (Kaggle T4, 30 GPU-hours per week); every configuration was then also trained and evaluated on folds 1-4, and the full five-fold results are in the cross-validation table in §2. Training uses 2,189 frames (every 10th frame of the other folds) unless stated otherwise. Every detector is trained for 12 epochs (one later run with 24 epochs is in §4). Fold assignments are stored in `src/hw2/configs/folds.csv`, because `GroupKFold` returns different folds in different scikit-learn versions.
 
 Models trained on all 63 clips have no clean validation set. Their "fold 0" numbers (about 0.54) are in-sample and are not used in any comparison below.
 
@@ -75,7 +75,7 @@ Every family has a baseline and at least two modified runs. "fps" is the through
 
 ### How much to trust the numbers
 
-Three YOLO runs with an identical configuration span 0.022 mAP: 0.2294 (seed 1), 0.2449 and 0.2514 (both seed 0; training on a GPU is not bit-exact, so the same seed does not give the same model). Two RT-DETR runs differ by 0.006, and two runs of the P2-head YOLO by 0.018 (§5.3). Since we have a single validation fold of about 12 clips, we treat differences below roughly 0.02 as inconclusive. Only the family ranking (RT-DETR above the rest) is clearly outside this noise on validation; the effect of the input resolution is supported mainly by the leaderboard.
+Three YOLO runs with an identical configuration span 0.022 mAP: 0.2294 (seed 1), 0.2449 and 0.2514 (both seed 0; training on a GPU is not bit-exact, so the same seed does not give the same model). Two RT-DETR runs differ by 0.006, and two runs of the P2-head YOLO by 0.018 (§5.3). Since a single fold holds only about 12 clips, we treat differences below roughly 0.02 as inconclusive. The cross-validation below confirms that only the family ranking (RT-DETR above the rest) is clearly outside this noise; the effect of the input resolution is supported mainly by the leaderboard.
 
 **Full cross-validation of every model.** The task asks for cross-validation, so every configuration in this report was trained and evaluated on each of the five clip-level folds (same settings as on fold 0, one seed; the runs on folds 1-4 were done on Kaggle T4 GPUs, those of the extra variants on a teammate's account). Mean mAP over the five held-out folds, best first:
 
@@ -110,6 +110,19 @@ What the cross-validation shows:
 - **Resolution for RT-DETR:** 1536 px is +0.006 over 1344 px on the mean, small compared with the fold-to-fold spread, so the leaderboard (0.3426 against 0.3137 for models trained on the same fold) remains the clearer evidence for it.
 
 Because the folds differ so much, a difference between two models on one fold is informative only if it is large compared with the fold-to-fold spread. This is the main reason why the fold-0 ensemble result did not carry over to the leaderboard.
+
+## 3. Where the errors are
+
+For each model we match detections with score ≥ 0.3 to the ground truth and label them as correct, duplicate, wrong class, badly localised, inside an ignored region, or background. We also count misses by object size. The full tables and the three automatically selected failure frames per family are in notebooks 02-04.
+
+![Failure cases, Faster R-CNN](images/fail_frcnn.png)
+![Failure cases, one-stage detectors](images/fail_onestage.png)
+![Failure cases, RT-DETR](images/fail_rtdetr.png)
+
+- **Small objects are missed.** Recall on small objects is 0.29-0.37 for the CNN detectors and about 0.52 for RT-DETR, while recall on large objects is 0.85-0.93 for all of them. The frames with the most missed small objects come from the same clip (`uav0000124_00944`) for all three families. In the one selected for Faster R-CNN, 29 of the 132 ground-truth objects are small and unmatched.
+- **Class confusions come from similar vehicle types.** The frame with the most class confusions (`uav0000288_00001`) is the same for all three families. Wrong-class detections are 13% of the correct ones for Faster R-CNN and YOLO, 17% for RT-DETR and 26% for RetinaNet. Per-class AP is lowest for bicycle (0.05-0.12), motor (0.07-0.16) and person (0.15-0.24), the smallest classes.
+- **Many false alarms are inside ignored regions.** At score ≥ 0.3 the number of detections in ignored regions is large for every model and is lowest for the two-stage and one-stage detectors (11k-16k) and highest for RT-DETR (29k-34k). These are not penalised by the metric. The counts are not directly comparable between frameworks, because RT-DETR scores are distributed differently, so we do not draw conclusions from the false-alarm totals.
+- **RetinaNet and Faster R-CNN produce more duplicates** than the others (1,850 and 425 against 355-406 for YOLO), as expected from their dense anchors plus NMS, whereas RT-DETR's one-to-one matching removes most of this need.
 
 ## 4. Final pipeline and what did not help
 
