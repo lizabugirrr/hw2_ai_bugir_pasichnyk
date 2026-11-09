@@ -84,6 +84,7 @@ Three YOLO runs with an identical configuration span 0.022 mAP: 0.2294 (seed 1),
 | RT-DETR-l 1536 px (final configuration) | 0.3096 | 0.3148 | 0.2674 | 0.2652 | 0.2737 | **0.2861** ± 0.0241 |
 | RT-DETR-l 1344, re-weighted matcher cost | 0.3004 | 0.3054 | 0.2523 | 0.2720 | 0.2724 | **0.2805** ± 0.0221 |
 | RT-DETR-l 1344 px | 0.2971 | 0.3096 | 0.2627 | 0.2663 | 0.2651 | **0.2802** ± 0.0217 |
+| YOLO26s (NMS-free successor of YOLO11) | 0.2535 | 0.2861 | 0.2270 | 0.2358 | 0.2446 | **0.2494** ± 0.0228 |
 | Faster R-CNN (default anchors) | 0.2595 | 0.2696 | 0.2190 | 0.2071 | 0.2379 | **0.2386** ± 0.0263 |
 | Faster R-CNN + GIoU box loss | 0.2608 | 0.2798 | 0.2130 | 0.2091 | 0.2298 | **0.2385** ± 0.0308 |
 | Faster R-CNN, 16 px anchors | 0.2736 | 0.2700 | 0.2100 | 0.2062 | 0.2316 | **0.2383** ± 0.0321 |
@@ -104,6 +105,7 @@ What the cross-validation shows:
 - **The family ranking holds on every fold.** RT-DETR-l is above Faster R-CNN, which is above YOLO11s, which is above RetinaNet, on all five folds without exception. The mean gap between RT-DETR (0.2802 at 1344 px) and Faster R-CNN (0.2386) is 0.04, and the smallest per-fold gap is 0.03.
 - **The mAP differs by up to 0.05 between folds** (0.265 to 0.315 for RT-DETR 1536 px), more than twice the run-to-run noise above. Folds 0 and 1 are the two easiest for every model, so the fold-0 numbers in the rest of the report are optimistic by about 0.02.
 - **Tuning that looked good on fold 0 did not carry over.** On fold 0 the 16 px anchors raised Faster R-CNN from 0.2595 to 0.2736 and NWD raised YOLO11s from 0.2449 to 0.2489; over the five folds the means are 0.2383 against 0.2386 and 0.2245 against 0.2234, i.e. no difference. The 12 px anchors for RetinaNet looked worse on fold 0 (0.1834 against 0.2287) and are worse on average (0.1654 against 0.2065). The re-weighted matcher cost of RT-DETR is 0.2805 against 0.2802. Only the larger input of YOLO11s (1920 px) is above its baseline on average (+0.010), which is inside the seed noise.
+- **YOLO26s is a clear step up from YOLO11s, but not up to RT-DETR.** It was added late as a fifth detector (`results/cv_yolo26.csv`, same protocol, one seed): 0.2494 against 0.2234 for YOLO11s, higher on every fold (+0.009 to +0.033), and above Faster R-CNN (0.2386) on four folds out of five. It stays below RT-DETR-l at 1344 px on every fold (0.2802 on average). It is also fast (about 50-65 fps). Adding the P2 head did not help it on fold 0 (0.2498 against 0.2535; one fold only, so inconclusive). We did not use YOLO26 in the final ensemble and have no leaderboard submission for it.
 - **None of our custom YOLO heads helps** (§5.3): the four head variants are 0.2101 to 0.2210 against 0.2234 for the standard head.
 - **Resolution for RT-DETR:** 1536 px is +0.006 over 1344 px on the mean, small compared with the fold-to-fold spread, so the leaderboard (0.3426 against 0.3137 for models trained on the same fold) remains the clearer evidence for it.
 
